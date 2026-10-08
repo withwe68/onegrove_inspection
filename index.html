@@ -102,7 +102,7 @@
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
             <div>
                 <h1 class="text-xl font-bold tracking-tight">원그로브 거실제연 점검 대시보드</h1>
-                <p class="text-xs text-slate-400 mt-1">야간 무풍 연동점검 2026.10.19~10.23 (N1~N4 + 예비 N5) · 대상 7개 매장 · 도면검토 판정 반영(2026.10.08)</p>
+                <p class="text-xs text-slate-400 mt-1">야간 무풍 연동점검 2026.10.19(월)~10.24(토) 23:00~04:00 · 4일 점검 + 1일 예비 · 7개 매장 · 실행계획서(2026.10.08) 기준</p>
             </div>
             <div class="flex gap-2 items-center">
                 <button onclick="toggleAdmin()" id="btn-admin" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-lg shadow-sm whitespace-nowrap">🔒 관리자 로그인</button>
@@ -132,6 +132,8 @@
         <main id="app-main" class="flex-1 flex flex-col md:flex-row overflow-hidden relative z-10">
             <section class="flex-1 p-4 md:p-6 overflow-y-auto relative bg-slate-100">
                 <div class="max-w-6xl mx-auto h-full flex flex-col pb-10">
+                    <!-- 일차별 점검정보 (실행계획서 5절) -->
+                    <div id="day-info" class="hidden mb-3 bg-white border-l-4 border-blue-600 rounded-lg shadow-sm p-3 text-xs text-slate-700"></div>
                     <!-- 범례 -->
                     <div class="flex flex-wrap justify-center items-center gap-4 mb-4 text-slate-600 font-medium text-xs sm:text-sm bg-white p-3 rounded-full shadow-sm border border-slate-200 w-fit mx-auto">
                         <span class="flex items-center"><div class="w-3 h-3 bg-white border-2 border-slate-400 rounded-full mr-2"></div>일반 (단독제연)</span>
@@ -213,6 +215,11 @@
                 <div id="detail-content" class="flex-1 overflow-y-auto p-4 md:p-5 hidden flex-col gap-4">
                     <div id="viewonly-banner" class="text-[11px] bg-slate-100 border border-slate-300 text-slate-600 rounded-md px-3 py-2">👁 열람 전용 모드 — 수정하려면 상단 <b>🔒 관리자 로그인</b>을 누르세요.</div>
                     <div id="remote-notice" class="hidden text-[11px] bg-amber-50 border border-amber-300 text-amber-800 rounded-md px-3 py-2">⚠ 다른 사용자가 이 매장 데이터를 변경했습니다. 입력 중인 내용은 유지되며, 저장하면 내 입력값으로 덮어씁니다. <button onclick="reloadDetail()" class="underline font-bold">최신값 불러오기</button></div>
+                    <div id="checkpoint-box" class="hidden text-xs bg-red-50 border border-red-300 text-red-800 rounded-md px-3 py-2"><b>★ 현장 확인 핵심 (실행계획서)</b><div id="checkpoint-text" class="mt-1 leading-relaxed"></div></div>
+                    <div id="checklist-wrap" class="hidden">
+                        <p class="text-[11px] text-slate-500 font-medium mb-1.5">무풍 연동점검 절차 체크 (휀 MCCB OFF·LOTO 상태)</p>
+                        <div id="checklist" class="grid grid-cols-1 gap-1 text-xs"></div>
+                    </div>
                     <div class="border-b border-slate-100 pb-3 space-y-2">
                         <div class="flex flex-wrap items-center gap-2 mb-1">
                             <select id="edit-wing" class="text-xs font-bold border border-slate-300 rounded px-2 py-1 bg-white text-slate-700">
@@ -237,13 +244,13 @@
                         <div>
                             <p class="text-[11px] text-slate-500 font-medium mb-1">도면검토 판정 (검토보고서 확정값)</p>
                             <select id="edit-review" class="w-full text-xs font-bold border border-slate-300 rounded px-2 py-1.5 bg-white">
-                                <option value="">미검토</option><option>적합</option><option>적합(여유율 주의)</option><option>부적합</option><option>검토요망</option><option>점검요망</option>
+                                <option value="">미검토</option><option>적합</option><option>적합(여유율 주의)</option><option>적합→재검토</option><option>부적합</option><option>검토요망</option><option>점검요망</option>
                             </select>
                         </div>
                         <div>
-                            <p class="text-[11px] text-slate-500 font-medium mb-1">야간점검 배정</p>
+                            <p class="text-[11px] text-slate-500 font-medium mb-1">야간점검 일차</p>
                             <select id="edit-night" class="w-full text-xs font-bold border border-slate-300 rounded px-2 py-1.5 bg-white">
-                                <option value="">자동 (점검대상 → 동별 배정)</option><option value="N1">N1 · 10.19(월)</option><option value="N2">N2 · 10.20(화)</option><option value="N3">N3 · 10.21(수)</option><option value="N4">N4 · 10.22(목)</option><option value="N5">N5 · 10.23(금) 예비</option>
+                                <option value="">미배정</option><option value="Day1">Day1 · 10.19(월)</option><option value="Day2">Day2 · 10.20(화)</option><option value="Day3">Day3 · 10.21(수)</option><option value="Day4">Day4 · 10.22(목)</option><option value="Day5">Day5 · 10.23(금) 예비</option>
                             </select>
                         </div>
                     </div>
@@ -448,27 +455,33 @@
         ];
 
         // ====================================================================
-        // 2026.10.08 검토반영 패치 — 매장별 검토보고서(01~15, 4차 확정본) 및 현장확인 팬–댐퍼 매핑 기준
+        // 2026.10.08 검토반영 패치 — 매장별 검토보고서(01~15) + 「무풍연동점검 실행계획서」(2026.10.08, 소방파트장) 기준
         //  · review  : 도면검토 판정(보고서 확정값)   · status : 현장 무풍점검 결과(별도)
-        //  · isInspectionTarget : 야간 무풍점검 대상 7개 매장(한와담·빕스·중앙해장·버핏그라운드·딤딤섬·테라로사·챔피언더블랙벨트)
+        //  · isInspectionTarget / night : 실행계획서 5절 세부일정(Day1~Day5) 배정
+        //  · checkPoint : 실행계획서 3절 "현장 확인 핵심 포인트"
         //  · "★현장확인" 표기는 도면만으로 확정할 수 없어 무풍점검에서 확정해야 하는 항목
         // ====================================================================
-        const DATA_REV = '20261008';
+        const DATA_REV = '20261008-2';
         const REVIEW_PATCHES = {
             // ---------- 2F ----------
             '2f-a1': { review: '적합', noteAppend: '[검토보고서 08] 직경 40m 초과 → 법정 45,000CMH 기준 적합. ⚠ 대시보드 휀 표기(FSF-52=10,000CMH)와 댐퍼 접두어(A2=FSF-52 계통)만으로는 45,000CMH가 산출되지 않음 — 실배정 휀 합산 근거 재확인 필요.' },
             '2f-a5': { review: '점검요망', noteAppend: '[검토보고서 07] 확대평면도의 신설 급기분기덕트·댐퍼가 댐퍼일람표(Zone 연동표)에 미반영 → 점검요망. ⚠ 휀·풍량(FSF-51~53, 46,500)이 빕스 "13"구역과 동일 표기 — 계통 공유 여부 및 인접구역(2L-13) 표기 재확인.' },
             '2f-a3': {
-                zone: '2L-10+2L-11 (통합, 292㎡)', isIntegrated: true, isInspectionTarget: true, review: '적합',
-                cmh: '스케줄 표기 10,000 / 실배정 31,000 (법정 17,520 → 176.9%)',
-                fans: 'FSF-53 / FEF-53 (실배정) ※스케줄표 FSF-52 표기 미갱신',
-                noteAppend: '[검토보고서 09] 그릴일람표(MF-002) 기준 292.0㎡, 법정최소 17,520CMH, 실배정 FSF-53/FEF-53 31,000CMH → 176.9% 적합. ★현장확인: 화재 시 실제 기동 휀이 FSF-53인지, 개방 메인댐퍼가 S-A-1/E-A-1·E-A-1-1(FSF-53 계통)인지 S-A-2/E-A-2(FSF-52 계통)인지 확인 — 국소댐퍼 접두어 A2는 FSF-52 계통 표기임.'
+                zone: '2L-10+2L-11 (통합, 292㎡)', isIntegrated: true, isInspectionTarget: true, night: 'Day1', review: '적합→재검토',
+                cmh: '설계검토 31,000 / 9.30 실동작 10,000 (법정 17,520의 57%)',
+                fans: '스케줄 FSF/FEF-52 (10,000) · 설계검토 FSF/FEF-53 (31,000)',
+                openDampers: '[메인] S-A-2 / E-A-2 (9.30 실동작, FSF-52 계통)\n[2L-10] S-A2-14, 23 / E-A2-13, 14, 45 — 9.30 개방 확인\n[2L-11] S-A2-17, 23 / E-A2-15, 16, 45 — 9.30 미출력',
+                checkPoint: '9/30 실경보 시 FSF-52(10,000)·2L-10 댐퍼만 기동, 2L-11 미출력 → 기동휀(52 vs 53) 및 2L-10·11 동시개방 확정. Day1 착수 전 FSF/FEF-52·댐퍼 9점 복구상태 확인.',
+                note: '[검토보고서 09] 292㎡, 법정 17,520CMH, 설계검토 기동휀 FSF-53(31,000) → 176.9%로 적합 판정했으나 9/30 수신기 이력으로 재검토. [9/30 실경보 이력 대조] ① 22:48:10 제연 연동정지[00 전체] 상태에서 22:49:38 화재발생 → 해제(23:14:19)까지 24분 41초간 거실제연 미동작 ② 해제 후 FSF/FEF-52 + S-A-2·E-A-2 + 2L-10 구역댐퍼 5점 출력·응답(17~38초), 2L-11 댐퍼(S-A2-17, E-A2-15·16) 미출력 ③ 실동작은 A2 트렁크(10,000CMH) — 법정최소의 57%로 미달 우려 ④ 휀·댐퍼 확인신호 복구기록 없음(10/1 07:08까지), 감지기 주소표기 "판매시설 B"(0420-3021·3062) 불일치. 후속: SMD 기동휀 FSF-53(S-A-1/E-A-1·1-1) 정정 검토, 동시개방 로직 반영, 주소표기 정정(점검업체/11.06).'
             },
             '2f-b4': {
-                name: 'VIPS (빕스) "13"구역', zone: '2L-13+2L-51 (통합, 892㎡)', isIntegrated: true, isMutual: false, isInspectionTarget: true,
+                name: 'VIPS (빕스) "13"구역', zone: '2L-13+2L-51 (통합, 892㎡)', isIntegrated: true, isMutual: false, isInspectionTarget: true, night: 'Day1',
                 type: '단독제연', method: '하부급기 상부배기', cmh: '46,500 (법정 45,000 → 103.3%, 여유율 낮음)',
-                fans: 'FSF-51, 52, 53 / FEF-51, 52, 53 (합산 46,500)', review: '점검요망',
-                note: '[검토보고서 10 정정] 기존 대시보드의 "2L-12,13 상호제연" 표기를 검토 확정치(2L-13+2L-51 통합, 단독제연, 하부급기·상부배기)로 정정. E-A2-50, 51은 화재 시 폐쇄(N.C). 점검요망 사유: 사용면적 상충(892㎡ vs 926.03㎡ — 둘 다 400㎡ 이상이라 법정기준 영향 없음), 댐퍼스케줄 변경여부 3자 상충(미수정 / E-A2-50·51 신규 / M-23 NOTE 변경없음). ★현장확인: 개방댐퍼 목록은 정정 전 자료이므로 현장 대조, 3개 휀 동시기동 여부 확인.'
+                fans: 'FSF/FEF-51+52+53 (46,500, A동 계통)', review: '점검요망',
+                openDampers: '[메인] S-A-1·2·3 / E-A-1·1-1·2·3\n[구역] S-A2-18~21, 23 / E-A2-17, 19~22, 38~40, 45, 46',
+                closeDampers: 'N.C 폐쇄: E-A2-50, 51\n구 2L-51(S-B2) 계통 미기동 확인\nOPEN 외 댐퍼',
+                checkPoint: 'A동 계통(FSF-51~53) 3대 동시 기동, N.C 댐퍼 E-A2-50·51 폐쇄, 구 2L-51(S-B2) 계통 미기동 확인. 여유율 부족 → 후속 풍량측정 대상.',
+                note: '[검토보고서 10 정정] 기존 "2L-12,13 상호제연" 표기를 검토 확정치(2L-13+2L-51 통합, 단독제연, 하부급기·상부배기)로 정정. 점검요망 사유: 사용면적 상충(892㎡ vs 926.03㎡ — 법정기준 영향 없음), 댐퍼스케줄 변경여부 3자 상충(미수정 / E-A2-50·51 신규 / M-23 NOTE 변경없음).'
             },
             '2f-b2': { noteAppend: '⚠ 빕스 검토(08.17 사용자 확인)에서 2L-52는 빕스 소유 독립 Zone으로 확정됨 — 본 카드의 "2L-52→2L-15 정정" 서술과 실제 Zone 번호를 교차 확인할 것.' },
             '2f-d1': { review: '적합', noteAppend: '[검토보고서 01] 법정최소 40,000CMH(직경 40m 이내) 대비 116.25% 적합. ⚠ "L-159~165 대통합" 범위가 2L-164(영화로운 여성의원) 별도 카드와 상충 — 통합 범위 재확인.' },
@@ -484,26 +497,37 @@
             '1f-a9': { fans: '★현장확인 (도면 표기 FSF-58 = C동 휀)', noteAppend: '⚠ A동 매장인데 C동 휀 번호가 기재됨. A동 휀(FSF-51~53) 중 실배정 확인 필요.' },
             '1f-d5': { fans: '★현장확인 (기존 표기 FSF-61 = D동 휀)', noteAppend: '⚠ 동(棟)은 A동으로 정정됐으나 휀 번호는 D동 휀이 남아 있음 — A동 휀 실배정 확인 필요.' },
             '1f-b1': {
-                zone: '1L-58~63 (통합, 372㎡)', isInspectionTarget: true, review: '적합',
-                cmh: '설계 23,000 / 실배정 31,000 (법정 22,320 → 138.9%)',
-                openDampers: 'S-B1-18~23 / E-B1-6~11, S-B-1 / E-B-1, E-B-1-1',
-                note: '[검토보고서 12] 6개 구역 372㎡ 단일구역 통합(상부급기/상부배기, 단독제연). 법정 22,320CMH, 실배정 FSF-56/FEF-56(31,000) → 138.9% 적합. FSF-56 계통 배기 메인댐퍼는 E-B-1·E-B-1-1 2개. ★현장확인: SMD의 FSF-56/FEF-56 실제 연동기동, 구 FSF-54/FEF-54 계통 잔존 여부.'
+                zone: '1L-58~63 (통합, 372㎡)', isInspectionTarget: true, night: 'Day2', review: '적합',
+                cmh: '설계 23,000 / 실배정 31,000 (법정 22,320 → 138.9%)', fans: 'FSF/FEF-56 (31,000)',
+                openDampers: '[메인] S-B-1 / E-B-1·E-B-1-1\n[구역] 실행계획서상 기록 미확보(6개 구역 전체) — 참고: S-B1-18~23 / E-B1-6~11',
+                closeDampers: '구 FSF-54 계통 미기동 확인\nOPEN 외 댐퍼',
+                checkPoint: '6개 구역 동시개방, FSF-56 기동 및 구 FSF-54 계통 미기동(잔존 여부) 확인.',
+                note: '[검토보고서 12] 6개 구역 372㎡ 단일구역 통합(상부급기/상부배기, 단독제연). 법정 22,320CMH, 실배정 FSF-56/FEF-56(31,000) → 138.9% 적합.'
             },
             '1f-b2': { review: '검토요망' },
             '1f-c1': {
-                isInspectionTarget: true, review: '적합(여유율 주의)', fans: 'FSF-57 / FEF-57 ★현장확인',
-                noteAppend: '[검토보고서 04] 적합(여유율 주의). ⚠ 설계 15,500 = FSF-57(5,500)+58(10,000) 패턴인데 대시보드는 FSF-57 단독·S-C1/E-C1(5,500 계통)로 표기 — 실기동 휀 현장확인.'
+                zone: '1L-117~119 (통합)', isInspectionTarget: true, night: 'Day2', review: '적합(여유율 주의)',
+                cmh: '15,500 (법정 15,427 → 100.5%)', fans: 'FSF/FEF-57+58 (15,500)',
+                openDampers: '[메인] S-C-1·2 / E-C-1·2\n[구역] S-C1-21, 22, 23 / E-C1-41, 42, 43',
+                checkPoint: '연동 정상 여부 확인(FSF-57+58 동시기동). 여유율 0.5%로 후속 풍량측정 대상 지정.',
+                note: '[검토보고서 04] L-117~119 통합, 법정 15,427CMH 대비 15,500CMH(100.5%) — 적합(여유율 주의).'
             },
             '1f-c2': { review: '부적합', noteAppend: '[검토보고서 03] 설계풍량은 법정 초과이나 실배정 FSF-58(10,000CMH)로 법정최소 미달 → 부적합. ※ 무풍점검 대상 외 — 예비일(N5) 편입 검토.' },
             '1f-c5': {
-                isInspectionTarget: true, review: '검토요망', fans: 'FSF-57, 58 / FEF-57, 58 ★현장확인 (합계 15,500)',
-                noteAppend: '[검토보고서 05] 검토요망. ⚠ FSF-57+58 합계 15,500CMH로는 표기 풍량(20,000 / 45,000)을 낼 수 없음 — FSF-59(31,000) 포함 여부 등 실배정 휀 현장확인 필수. 매드포갈릭·이완미엔·리브팜 카드와 구역 중복 정리 필요.'
+                zone: '1L-101~107 (통합)', isInspectionTarget: true, night: 'Day3', review: '검토요망',
+                cmh: '1·2번 31,000 / 3·4번 15,500',
+                fans: '1·2번 FSF-59 (31,000) / 3·4번 FSF-57+58 (15,500)',
+                openDampers: '[메인] 1·2번 S-C-3 / E-C-3, 3·4번 S-C-1·2 / E-C-1·2\n[구역] 기록 미확보 — 구역별 일람표 지참\n(참고, F-007 변경후 스케줄) [101~102] S-C1-05/E-C1-23, S-C1-06-1/E-C1-24 · [103~105] S-C1-06, S-C1-07/E-C1-25, S-C1-08/E-C1-26, S-C1-09/E-C1-27',
+                checkPoint: '자료 상충 해소 — 현장 댐퍼 명판·SMD 출력본과 스케줄 셀단위 대조, 구역별 기동휀 현장확정.',
+                note: '[검토보고서 05] 검토요망(자료 상충). 실행계획서 기준 1·2번 구역은 FSF-59(31,000)/S-C-3 계통, 3·4번 구역은 FSF-57+58(15,500)/S-C-1·2 계통. 매드포갈릭·이완미엔·리브팜 카드와 구역 중복 정리 필요.'
             },
             '1f-d1': {
-                isInspectionTarget: true, review: '부적합',
-                cmh: '실배정 10,000 (법정최소 미달)',
-                fans: '★현장확인 (스케줄 FSF-62 기재 / 검토: 실배정 10,000CMH급)',
-                note: '[검토보고서 02] L-158~160 통합, 설계풍량은 법정 초과이나 실배정 휀이 10,000CMH급으로 미달 → 부적합. 1차보고서 정정항목: D동 매장에 C동 휀(FSF-58) 번호 오기. 개선안: FSF-62/FEF-62(31,000CMH, S-D-3/E-D-3). ★현장확인: 실제 개방 메인댐퍼가 S-D-2/E-D-2(FSF-61, 10,000)인지 S-D-3/E-D-3(FSF-62, 31,000)인지, 기동 휀 번호 확인.'
+                zone: '1L-158~160 (통합)', isInspectionTarget: true, night: 'Day3', review: '부적합',
+                cmh: '현행 15,500 (법정 16,440 → 94.3%)',
+                fans: '현행 FSF/FEF-60+61 (15,500) → FSF-62(S-D-3) 전환 대상',
+                openDampers: '[메인] S-D-1·2 / E-D-1·2 (→ S-D-3 전환 대상)\n[구역] S-D1-12, 13, 14 / E-D1-21, 22, 23',
+                checkPoint: 'SMD상 S-D-1·2(FSF-60+61, 15,500) 기동 확인 — 법정 16,440 미달, S-D-3 전환 대상.',
+                note: '[검토보고서 02 / 실행계획서] L-158~160 통합, 법정 16,440CMH 대비 현행 FSF-60+61 15,500CMH(94.3%) 미달 → 부적합. 1차보고서 정정항목: D동 매장에 C동 휀 번호 오기. 개선: FSF-62/FEF-62(31,000, S-D-3/E-D-3) 계통 전환 검토(시설팀·CBRE/11월), 후속 풍량측정 대상.'
             },
 
             // ---------- B1F ----------
@@ -517,19 +541,21 @@
                 noteAppend: '[검토보고서 13] A 270.35㎡·B 392.48㎡·C 375.40㎡, 실배정 31,000CMH → 131.7~191.1% 적합. 서류정정: 소속동 B→A, L-5·7·9 스케줄 반영, C구역 사무실 동일구역 여부 확인.'
             },
             'b1-d6': {
-                name: '챔피언더블랙벨트 ⑱', zone: 'B1L-165 (572.71㎡)', isIntegrated: false, isMutual: true, isInspectionTarget: true,
+                name: '챔피언더블랙벨트 ⑱', zone: 'B1L-165 (572.71㎡)', isIntegrated: false, isMutual: true, isInspectionTarget: true, night: 'Day4',
                 type: '상호제연(스케줄) ↔ 단독제연(EM-005) 상충', method: '★현장확인', review: '부적합',
-                cmh: '41,000 (법정 40,000 → 102.5%)', fans: 'FSF-61, 62 / FEF-61, 62 (합산 41,000)',
-                openDampers: '★현장확인 (제연덕트 일람표 실번호18 대조)', closeDampers: 'OPEN 외 댐퍼',
-                note: '[검토보고서 15, 4차 확정] 제연경계 구획(C.H 3,000, 수직거리 2m 이하), 대각선 38.36m → 직경 40m 이내, 법정 40,000CMH, 실배정 41,000 → 102.5% 충족. 부적합 사유(풍량 무관): ① 원본 제연덕트 일람표 "상호제연" vs 전용도면 EM-005 "단독제연 개선" 서류 상충, ② 상호제연일 경우 ⑱+⑲ 합계 약 1,086~1,089㎡(자료 혼재)로 §6④ 1,000㎡ 한도 초과. ★현장확인: ⑱ 감지 시 SMD가 ⑱만 배기(단독)하는지 ⑱배기+⑲급기(상호)인지 기동로직 확인 → 실제 반영본 확정.'
+                cmh: '41,000 (법정 40,000 → 102.5%)', fans: 'FSF/FEF-61+62 (41,000)',
+                openDampers: '[메인] S-D-2·3 / E-D-2·3\n[구역] 기록 미확보 (제연덕트 일람표 실번호18 대조)', closeDampers: 'OPEN 외 댐퍼',
+                checkPoint: '⑱ 감지 시 ⑲ 동시배기 여부(상호 vs 단독) 확정, FSF/FEF-61+62 기동, TG 개구 실측. ⑱·⑲ 개별 발보(최고난도, 단독배정).',
+                note: '[검토보고서 15, 4차 확정] 제연경계 구획(C.H 3,000, 수직거리 2m 이하), 직경 40m 이내, 법정 40,000CMH, 실배정 41,000 → 102.5%. 부적합 사유(풍량 무관): ① 원본 일람표 "상호제연" vs 전용도면 EM-005 "단독제연 개선" 서류 상충 ② 상호제연 시 ⑱⑲ 합계 1,086㎡로 §6④ 1,000㎡ 한도 초과(구역별 합산 1,088.55㎡와 차이 — 자료 정리 필요). 후속: 서류 일원화(시공사·설계사 합동확인), 풍량측정.'
             },
         };
         const REVIEW_ADDITIONS = [
             {
-                id: '2f-b5', floor: '2F', wing: 'B', name: 'VIPS (빕스) "2"구역', zone: '2L-52 (80㎡)', isIntegrated: false, isMutual: false, isInspectionTarget: true,
-                type: '단독제연', method: '상부급기 상부배기', cmh: '5,500 (법정 5,000 → 110.0%)',
-                openDampers: '★현장확인 (댐퍼일람표 대조 필요)', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-54 / FEF-54', review: '점검요망',
-                note: '[검토보고서 10 신규] 빕스 자체의 두 번째 독립 Zone(2026.08.17 사용자 확인 — 타 매장 소유 아님). 80㎡×60=4,800 → 최저 5,000CMH 적용. ★현장확인: SMD가 "13"구역과 독립 인식하는지(오연동 여부) 확인.',
+                id: '2f-b5', floor: '2F', wing: 'B', name: 'VIPS (빕스) "2"구역', zone: '2L-52 (80㎡)', isIntegrated: false, isMutual: false, isInspectionTarget: true, night: 'Day1',
+                type: '단독제연', method: '상부급기 상부배기', cmh: '스케줄 5,500 (법정 5,000 → 110.0%)',
+                openDampers: '[메인] ★현장확인\n[구역] 기록 미확보', closeDampers: 'OPEN 외 댐퍼', fans: '스케줄 5,500 (휀번호 미확정)', review: '점검요망',
+                checkPoint: '현장 댐퍼 명판·SMD 출력 기록으로 기동휀 번호 확정, "13"구역과 독립 인식(오연동 여부) 확인.',
+                note: '[검토보고서 10 신규] 빕스 자체의 두 번째 독립 Zone(2026.08.17 사용자 확인). 80㎡×60=4,800 → 최저 5,000CMH 적용. 기존 검토의 FSF-54 매핑은 실행계획서에서 미확정으로 분류됨.',
                 planFiles: [{ label: 'A동,B동 2층 구역 평면도', path: '2층/A동, B동 2층 제연설비 구역 평면도.pdf' }]
             },
             {
@@ -539,10 +565,11 @@
                 note: '[검토보고서 14 신규] 무신사 스탠다드(A동)와 별개인 D동 독립매장. 105.11㎡×60=6,307CMH, 실배정 FSF-61(10,000) → 158.6% 적합. 서류정정: 스케줄표 10,500CMH 표기.'
             },
             {
-                id: 'b1-d8', floor: 'B1F', wing: 'D', name: '챔피언더블랙벨트 ⑲', zone: 'B1L-166 (515.84㎡)', isIntegrated: false, isMutual: true, isInspectionTarget: true,
+                id: 'b1-d8', floor: 'B1F', wing: 'D', name: '챔피언더블랙벨트 ⑲', zone: 'B1L-166 (515.84㎡)', isIntegrated: false, isMutual: true, isInspectionTarget: true, night: 'Day4',
                 type: '상호제연(스케줄) ↔ 단독제연(EM-005) 상충', method: '★현장확인', cmh: '41,000 (법정 40,000 → 102.5%)',
-                openDampers: '★현장확인 (제연덕트 일람표 실번호19 대조)', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-61, 62 / FEF-61, 62 (합산 41,000)', review: '부적합',
-                note: '[검토보고서 15, 4차 확정] ⑱과 동일 사유로 부적합(서류 상충 + 상호제연 시 면적 한도 초과). ★현장확인: ⑲ 감지 시 SMD 기동로직(단독/상호) 확인, ⑱ 감지 시 ⑲ 급기댐퍼 개방 여부 교차 확인.'
+                openDampers: '[메인] S-D-2·3 / E-D-2·3\n[구역] 기록 미확보 (제연덕트 일람표 실번호19 대조)', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF/FEF-61+62 (41,000)', review: '부적합',
+                checkPoint: '⑲ 개별 발보 — ⑱ 급·배기 동작 여부(상호 vs 단독) 교차 확인, FSF/FEF-61+62 기동.',
+                note: '[검토보고서 15, 4차 확정] ⑱과 동일 사유로 부적합(서류 상충 + 상호제연 시 면적 한도 초과).'
             },
         ];
         // 패치 적용
@@ -557,6 +584,7 @@
             initialStoreData.push(a);
             REVIEW_PATCHES[a.id] = REVIEW_PATCHES[a.id] || {};
         });
+
 
 
         // 로컬 스토리지 키 (Firebase 미설정 시 폴백으로 사용)
@@ -690,16 +718,31 @@
             // B2F(지하2층 이마트 트레이더스)는 점검 대상 제외 — 도면 링크도 함께 제거함.
         };
 
-        // 야간 무풍 연동점검 일정 (확정 실행계획: 2026.10.19~10.23, A→B→C→D동, 4일 + 예비 1일)
-        const NIGHT_BY_WING = { A: 'N1', B: 'N2', C: 'N3', D: 'N4' };
+        // 야간 무풍 연동점검 일정 — 「무풍연동점검 실행계획서」(2026.10.08) 5절 세부일정 (동별 팬룸 단위 편성)
         const DAY_LABELS = {
-            'N1': 'N1 · 10.19(월) A동', 'N2': 'N2 · 10.20(화) B동', 'N3': 'N3 · 10.21(수) C동',
-            'N4': 'N4 · 10.22(목) D동', 'N5': 'N5 · 10.23(금) 예비일'
+            'Day1': 'Day1 · 10.19(월)~20(화)', 'Day2': 'Day2 · 10.20(화)~21(수)', 'Day3': 'Day3 · 10.21(수)~22(목)',
+            'Day4': 'Day4 · 10.22(목)~23(금)', 'Day5': 'Day5 · 10.23(금)~24(토) 예비'
         };
+        const DAY_INFO = {
+            'Day1': { stores: 'A동 2F 한와담 + B동 2F 빕스("13"·"2")', fanroom: '#1', memo: '한와담 2L-10·11 동시개방 확인 · 착수 전 FSF/FEF-52·댐퍼 9점 복구상태 확인' },
+            'Day2': { stores: 'B동 1F 중앙해장 + C동 1F 딤딤섬', fanroom: '#2, #3', memo: '중앙해장 6구역 동시개방' },
+            'Day3': { stores: 'C동 1F 버핏그라운드 + D동 1F 테라로사', fanroom: '#3, #5', memo: '테라로사 S-D-1·2 기동 확인' },
+            'Day4': { stores: 'D동 B1F 챔피언더블랙벨트 (단독배정)', fanroom: '#5', memo: '최고난도 — ⑱·⑲ 개별 발보' },
+            'Day5': { stores: '예비일 — 미완료·재점검 구역 및 결과 정리', fanroom: '필요시', memo: '기상·실화재 등 순연 대비' },
+        };
+        const LEGACY_DAY = { N1: 'Day1', N2: 'Day2', N3: 'Day3', N4: 'Day4', N5: 'Day5' };
         function getDay(store) {
-            if (store.night) return store.night;
-            if (!store.isInspectionTarget) return '';
-            return NIGHT_BY_WING[store.wing] || '';
+            return store.night ? (LEGACY_DAY[store.night] || store.night) : '';
+        }
+        const CHECK_ITEMS = [
+            '① 감지기 동작 (자탐 겸용 신호)', '② 방화셔터 강하·정지 확인', '③ 구역 댐퍼 OPEN / N.C 확인',
+            '④ 휀 기동신호 — 지정 FSF/FEF 대조', '⑤ 동시연동 — 상호·통합구역 확인', '⑥ 복구: 셔터→감지기→AUTO→MCCB ON, MCC·방재실 교차확인'
+        ];
+        function rvClass(r) {
+            if (!r) return '';
+            if (r.includes('부적합')) return 'rv-부적합';
+            if (r.includes('요망') || r.includes('재검토')) return 'rv-검토요망';
+            return 'rv-적합';
         }
         function esc(v) {
             return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -795,15 +838,32 @@
 
         function renderDayFilter() {
             const container = document.getElementById('day-filter');
-            const days = ['ALL', 'TARGET', 'N1', 'N2', 'N3', 'N4', 'N5'];
+            const days = ['ALL', 'TARGET', 'Day1', 'Day2', 'Day3', 'Day4', 'Day5'];
             container.innerHTML = '';
             days.forEach(d => {
                 const btn = document.createElement('button');
                 btn.className = `day-btn px-3 py-2 rounded-md text-xs font-semibold transition-all whitespace-nowrap ${d === currentDayFilter ? 'active' : 'text-slate-300 hover:bg-slate-700'}`;
                 btn.textContent = d === 'ALL' ? '층별 전체' : d === 'TARGET' ? '★ 점검대상(전층)' : DAY_LABELS[d];
+                btn.title = DAY_INFO[d] ? DAY_INFO[d].stores : '';
                 btn.onclick = () => { currentDayFilter = d; renderDayFilter(); renderMap(activeFloor()); };
                 container.appendChild(btn);
             });
+        }
+
+        function renderDayInfo() {
+            const box = document.getElementById('day-info');
+            const timeline = '<div class="mt-1.5 text-slate-500">22:30 집결·TBM → 23:00 설비전환(속보·방송 정지, 휀 MCCB OFF) → 23:15 연동점검 → 02:45 복구 → 03:30 최종확인 · <b class="text-red-600">03:30 이후 신규착수 금지, 04:00까지 전 설비 AUTO 복귀</b></div>';
+            if (currentDayFilter === 'TARGET') {
+                box.innerHTML = '<div class="font-bold text-slate-800 mb-1">야간 무풍 연동점검 일정 (23:00~익일 04:00)</div>' +
+                    Object.keys(DAY_INFO).map(d => `<div><b>${esc(DAY_LABELS[d])}</b> — ${esc(DAY_INFO[d].stores)} <span class="text-slate-400">(팬룸 ${esc(DAY_INFO[d].fanroom)})</span></div>`).join('') + timeline;
+                box.classList.remove('hidden');
+            } else if (DAY_INFO[currentDayFilter]) {
+                const i = DAY_INFO[currentDayFilter];
+                box.innerHTML = `<div class="font-bold text-slate-800">${esc(DAY_LABELS[currentDayFilter])} 23:00~04:00 · 팬룸/MCC ${esc(i.fanroom)}</div><div class="mt-0.5">${esc(i.stores)} — <span class="text-blue-700 font-semibold">${esc(i.memo)}</span></div>` + timeline;
+                box.classList.remove('hidden');
+            } else {
+                box.classList.add('hidden');
+            }
         }
 
         function updateProgressSummary(list) {
@@ -842,6 +902,7 @@
             else floorData = currentData.filter(store => store.day === currentDayFilter);
 
             updateProgressSummary(floorData);
+            renderDayInfo();
 
             if(floorData.length === 0) {
                  wings.forEach(wing => {
@@ -878,13 +939,13 @@
                     <div class="flex items-start justify-between gap-1">
                         <div class="flex items-center min-w-0">${selectMark}<div class="${nameClass}" title="${esc(store.name)}">${crossFloor ? `<span class="text-[10px] text-slate-500 font-mono mr-1">${esc(store.floor)}</span>` : ''}${esc(store.name)}</div></div>
                         <div class="flex items-center gap-1 shrink-0">
-                            ${store.review ? `<span class="rv-badge rv-${esc(store.review.replace(/\(.*\)/, ''))}" title="도면검토 판정">${esc(store.review)}</span>` : ''}
+                            ${store.review ? `<span class="rv-badge ${rvClass(store.review)}" title="도면검토 판정">${esc(store.review)}</span>` : ''}
                             <span class="status-dot st-${esc(store.status)}" title="현장결과: ${esc(store.status)}"></span>
                         </div>
                     </div>
                     <div class="flex items-center justify-between mt-1">
                         <div class="text-[10px] text-slate-500 font-mono bg-white bg-opacity-70 px-1.5 py-0.5 rounded inline-block self-start border border-slate-100">Zone: ${esc(store.zone)}</div>
-                        <div class="text-[10px] ${store.day ? 'text-red-600 font-bold' : 'text-slate-300'}">${store.day ? esc(store.day) : '-'}</div>
+                        <div class="text-[10px] ${store.day ? 'text-red-600 font-bold' : 'text-slate-300'} whitespace-nowrap">${store.day ? esc(store.day) + (store.isInspectionTarget ? ` · ${(store.checks || []).filter(Boolean).length}/${CHECK_ITEMS.length}` : '') : '-'}</div>
                     </div>
                 `;
                 container.appendChild(el);
@@ -993,9 +1054,25 @@
             deleteBtn.classList.remove('animate-pulse');
 
             document.getElementById('detail-floor-badge').textContent = `${store.floor} ${store.wing}동`;
-            document.getElementById('detail-day').textContent = store.day ? ('야간 ' + (DAY_LABELS[store.day] || store.day)) : '무풍점검 대상 외';
-            document.getElementById('edit-review').value = store.review || '';
-            document.getElementById('edit-night').value = store.night || '';
+            document.getElementById('detail-day').textContent = store.day ? ('야간 ' + (DAY_LABELS[store.day] || store.day)) : (store.isInspectionTarget ? '일차 미배정' : '무풍점검 대상 외');
+            const cpBox = document.getElementById('checkpoint-box');
+            document.getElementById('checkpoint-text').textContent = store.checkPoint || '';
+            cpBox.classList.toggle('hidden', !store.checkPoint);
+            const clWrap = document.getElementById('checklist-wrap');
+            const cl = document.getElementById('checklist');
+            cl.innerHTML = '';
+            CHECK_ITEMS.forEach((label, i) => {
+                const row = document.createElement('label');
+                row.className = 'flex items-start gap-2 bg-slate-50 border border-slate-200 rounded px-2 py-1.5';
+                row.innerHTML = `<input type="checkbox" id="chk-${i}" class="mt-0.5" ${(store.checks || [])[i] ? 'checked' : ''}><span></span>`;
+                row.querySelector('span').textContent = label;
+                cl.appendChild(row);
+            });
+            clWrap.classList.toggle('hidden', !store.isInspectionTarget);
+            const rvSel = document.getElementById('edit-review');
+            if (store.review && ![...rvSel.options].some(o => o.value === store.review)) rvSel.add(new Option(store.review, store.review));
+            rvSel.value = store.review || '';
+            document.getElementById('edit-night').value = getDay(store);
             document.getElementById('remote-notice').classList.add('hidden');
 
             // 편집용 Input 필드에 값 바인딩 (기본정보)
@@ -1093,10 +1170,11 @@
             const note = document.getElementById('edit-note').value;
             const review = document.getElementById('edit-review').value;
             const night = document.getElementById('edit-night').value;
+            const checks = CHECK_ITEMS.map((_, i) => !!document.getElementById('chk-' + i)?.checked);
 
             writeOverride(currentStoreId, {
                 name, wing, zone, type, isIntegrated, isMutual, isInspectionTarget, method, cmh,
-                openDampers, closeDampers, fans, memo, note, review, night,
+                openDampers, closeDampers, fans, memo, note, review, night, checks,
                 status: pendingStatus, _rev: DATA_REV, updatedAt: new Date().toISOString()
             });
             detailDirty = false;
