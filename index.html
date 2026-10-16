@@ -102,13 +102,14 @@
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
             <div>
                 <h1 class="text-xl font-bold tracking-tight">원그로브 거실제연 점검 대시보드</h1>
-                <p class="text-xs text-slate-400 mt-1">야간 무풍 연동점검 2026.10.19(월)~10.24(토) 23:00~04:00 · 4일 점검 + 1일 예비 · 7개 매장 · 실행계획서(2026.10.08) 기준</p>
+                <p class="text-xs text-slate-400 mt-1">야간 무풍 연동점검 2026.10.19(월)~10.24(토) 23:00~04:00 · 4일 점검 + 1일 예비 · 7개 매장 · 실행계획서(2026.10.08) 기준 · 10.16 점검준비 보완(휀 LOTO·매핑검증·현장실측 기록)</p>
             </div>
             <div class="flex gap-2 items-center">
                 <button onclick="toggleAdmin()" id="btn-admin" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-lg shadow-sm whitespace-nowrap">🔒 관리자 로그인</button>
                 <span id="sync-status" class="text-xs px-2 py-1 rounded font-bold bg-slate-700 text-slate-300 whitespace-nowrap">확인 중...</span>
                 <span id="progress-summary" class="text-xs bg-slate-800 px-3 py-2 rounded-lg font-mono border border-slate-700 whitespace-nowrap"></span>
-                <button onclick="exportData()" class="px-3 py-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg shadow-sm whitespace-nowrap">결과 내보내기</button>
+                <button onclick="exportCsv()" class="px-3 py-2 bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm whitespace-nowrap" title="점검대상 매장 결과를 엑셀용 CSV로 저장">결과 CSV</button>
+                <button onclick="exportData()" class="px-3 py-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg shadow-sm whitespace-nowrap" title="백업·병합용 JSON">결과 내보내기</button>
                 <label class="admin-only px-3 py-2 bg-indigo-700 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg shadow-sm cursor-pointer whitespace-nowrap">
                     결과 합치기
                     <input type="file" accept="application/json" class="hidden" onchange="importData(event)">
@@ -216,6 +217,10 @@
                     <div id="viewonly-banner" class="text-[11px] bg-slate-100 border border-slate-300 text-slate-600 rounded-md px-3 py-2">👁 열람 전용 모드 — 수정하려면 상단 <b>🔒 관리자 로그인</b>을 누르세요.</div>
                     <div id="remote-notice" class="hidden text-[11px] bg-amber-50 border border-amber-300 text-amber-800 rounded-md px-3 py-2">⚠ 다른 사용자가 이 매장 데이터를 변경했습니다. 입력 중인 내용은 유지되며, 저장하면 내 입력값으로 덮어씁니다. <button onclick="reloadDetail()" class="underline font-bold">최신값 불러오기</button></div>
                     <div id="checkpoint-box" class="hidden text-xs bg-red-50 border border-red-300 text-red-800 rounded-md px-3 py-2"><b>★ 현장 확인 핵심 (실행계획서)</b><div id="checkpoint-text" class="mt-1 leading-relaxed"></div></div>
+                    <div id="fanmap-box" class="hidden text-xs bg-slate-50 border border-slate-300 rounded-md px-3 py-2">
+                        <b class="text-slate-800">휀 ↔ 메인댐퍼 매핑 검증 (현장검증 2026.08.19 기준)</b>
+                        <div id="fanmap-rows" class="mt-1 space-y-0.5 font-mono text-[11px]"></div>
+                    </div>
                     <div id="checklist-wrap" class="hidden">
                         <p class="text-[11px] text-slate-500 font-medium mb-1.5">무풍 연동점검 절차 체크 (휀 MCCB OFF·LOTO 상태)</p>
                         <div id="checklist" class="grid grid-cols-1 gap-1 text-xs"></div>
@@ -261,6 +266,16 @@
                             <button onclick="setStatus('적합')" data-status="적합" class="status-btn py-2 rounded-lg text-xs font-bold border-2 transition-all">적합</button>
                             <button onclick="setStatus('부적합')" data-status="부적합" class="status-btn py-2 rounded-lg text-xs font-bold border-2 transition-all">부적합</button>
                             <button onclick="setStatus('보류')" data-status="보류" class="status-btn py-2 rounded-lg text-xs font-bold border-2 transition-all">보류</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-2.5 space-y-1.5">
+                        <p class="text-[11px] font-bold text-blue-800">현장 실측 기록 — SMD 실제 출력 기준 (도면값 아님)</p>
+                        <input id="edit-field-fans" type="text" class="w-full p-2 text-xs font-mono border border-blue-200 rounded bg-white focus:ring-2 focus:ring-blue-400 outline-none" placeholder="실제 기동신호 휀 (예: FSF/FEF-52)">
+                        <textarea id="edit-field-dampers" rows="2" class="w-full p-2 text-xs font-mono border border-blue-200 rounded bg-white focus:ring-2 focus:ring-blue-400 outline-none resize-y" placeholder="실제 개방·응답 댐퍼 / 응답시간 / 미출력 댐퍼"></textarea>
+                        <div class="flex items-center gap-2">
+                            <input id="edit-inspector" type="text" class="flex-1 p-2 text-xs border border-blue-200 rounded bg-white focus:ring-2 focus:ring-blue-400 outline-none" placeholder="점검자">
+                            <span id="inspected-at" class="text-[10px] text-slate-500 whitespace-nowrap"></span>
                         </div>
                     </div>
 
@@ -461,7 +476,7 @@
         //  · checkPoint : 실행계획서 3절 "현장 확인 핵심 포인트"
         //  · "★현장확인" 표기는 도면만으로 확정할 수 없어 무풍점검에서 확정해야 하는 항목
         // ====================================================================
-        const DATA_REV = '20261008-2';
+        const DATA_REV = '20261016-1'; // 10.16 점검준비 보완: 아래 정정치가 10.08 이전/이후 저장값에 가려지지 않도록 리비전 갱신
         const REVIEW_PATCHES = {
             // ---------- 2F ----------
             '2f-a1': { review: '적합', noteAppend: '[검토보고서 08] 직경 40m 초과 → 법정 45,000CMH 기준 적합. ⚠ 대시보드 휀 표기(FSF-52=10,000CMH)와 댐퍼 접두어(A2=FSF-52 계통)만으로는 45,000CMH가 산출되지 않음 — 실배정 휀 합산 근거 재확인 필요.' },
@@ -480,7 +495,7 @@
                 fans: 'FSF/FEF-51+52+53 (46,500, A동 계통)', review: '점검요망',
                 openDampers: '[메인] S-A-1·2·3 / E-A-1·1-1·2·3\n[구역] S-A2-18~21, 23 / E-A2-17, 19~22, 38~40, 45, 46',
                 closeDampers: 'N.C 폐쇄: E-A2-50, 51\n구 2L-51(S-B2) 계통 미기동 확인\nOPEN 외 댐퍼',
-                checkPoint: 'A동 계통(FSF-51~53) 3대 동시 기동, N.C 댐퍼 E-A2-50·51 폐쇄, 구 2L-51(S-B2) 계통 미기동 확인. 여유율 부족 → 후속 풍량측정 대상.',
+                checkPoint: 'A동 계통(FSF-51~53) 3대 동시 기동, N.C 댐퍼 E-A2-50·51 폐쇄, 구 2L-51(S-B2) 계통 미기동 확인. 여유율 부족 → 후속 풍량측정 대상. ★ 개방목록의 S-A2-20·21 / E-A2-17·19~22·45는 페이홍러우(2L-12) 카드와 동일 번호 — 빕스 발보 시 2L-12 구역 동시개방 여부(상호제연 잔존 여부)를 현장 실측란에 기록.',
                 note: '[검토보고서 10 정정] 기존 "2L-12,13 상호제연" 표기를 검토 확정치(2L-13+2L-51 통합, 단독제연, 하부급기·상부배기)로 정정. 점검요망 사유: 사용면적 상충(892㎡ vs 926.03㎡ — 법정기준 영향 없음), 댐퍼스케줄 변경여부 3자 상충(미수정 / E-A2-50·51 신규 / M-23 NOTE 변경없음).'
             },
             '2f-b2': { noteAppend: '⚠ 빕스 검토(08.17 사용자 확인)에서 2L-52는 빕스 소유 독립 Zone으로 확정됨 — 본 카드의 "2L-52→2L-15 정정" 서술과 실제 Zone 번호를 교차 확인할 것.' },
@@ -509,7 +524,7 @@
                 zone: '1L-117~119 (통합)', isInspectionTarget: true, night: 'Day2', review: '적합(여유율 주의)',
                 cmh: '15,500 (법정 15,427 → 100.5%)', fans: 'FSF/FEF-57+58 (15,500)',
                 openDampers: '[메인] S-C-1·2 / E-C-1·2\n[구역] S-C1-21, 22, 23 / E-C1-41, 42, 43',
-                checkPoint: '연동 정상 여부 확인(FSF-57+58 동시기동). 여유율 0.5%로 후속 풍량측정 대상 지정.',
+                checkPoint: 'L-117~119 3개 구역댐퍼 동시개방 + 메인 S-C-1·2/E-C-1·2 개방 + FSF/FEF-57·58 동시 기동신호 확인(한 대만 기동 시 5,500 또는 10,000으로 법정 미달). 여유율 0.5%로 후속 풍량측정 대상 지정.',
                 note: '[검토보고서 04] L-117~119 통합, 법정 15,427CMH 대비 15,500CMH(100.5%) — 적합(여유율 주의).'
             },
             '1f-c2': { review: '부적합', noteAppend: '[검토보고서 03] 설계풍량은 법정 초과이나 실배정 FSF-58(10,000CMH)로 법정최소 미달 → 부적합. ※ 무풍점검 대상 외 — 예비일(N5) 편입 검토.' },
@@ -518,7 +533,7 @@
                 cmh: '1·2번 31,000 / 3·4번 15,500',
                 fans: '1·2번 FSF-59 (31,000) / 3·4번 FSF-57+58 (15,500)',
                 openDampers: '[메인] 1·2번 S-C-3 / E-C-3, 3·4번 S-C-1·2 / E-C-1·2\n[구역] 기록 미확보 — 구역별 일람표 지참\n(참고, F-007 변경후 스케줄) [101~102] S-C1-05/E-C1-23, S-C1-06-1/E-C1-24 · [103~105] S-C1-06, S-C1-07/E-C1-25, S-C1-08/E-C1-26, S-C1-09/E-C1-27',
-                checkPoint: '자료 상충 해소 — 현장 댐퍼 명판·SMD 출력본과 스케줄 셀단위 대조, 구역별 기동휀 현장확정.',
+                checkPoint: '자료 상충 해소 — 현장 댐퍼 명판·SMD 출력본과 스케줄 셀단위 대조, 구역별 기동휀 현장확정. ★ F-007 설계(101~102: 20,000 / 103~105: 45,000)와 실행계획서 배정(1·2번 31,000 / 3·4번 15,500)이 역전 — 3·4번(설계 45,000) 구역에 FSF-57+58(15,500)만 기동되면 법정미달 의심이므로 구역별 실제 기동 휀을 반드시 기록. 구역범위 표기도 상충(F-007 1L-101~105 / 대시보드 1L-101~107). 구 매드포갈릭·이완미엔·리브팜(1L-101~103) 카드와 중복 정리 근거로 활용.',
                 note: '[검토보고서 05] 검토요망(자료 상충). 실행계획서 기준 1·2번 구역은 FSF-59(31,000)/S-C-3 계통, 3·4번 구역은 FSF-57+58(15,500)/S-C-1·2 계통. 매드포갈릭·이완미엔·리브팜 카드와 구역 중복 정리 필요.'
             },
             '1f-d1': {
@@ -526,7 +541,7 @@
                 cmh: '현행 15,500 (법정 16,440 → 94.3%)',
                 fans: '현행 FSF/FEF-60+61 (15,500) → FSF-62(S-D-3) 전환 대상',
                 openDampers: '[메인] S-D-1·2 / E-D-1·2 (→ S-D-3 전환 대상)\n[구역] S-D1-12, 13, 14 / E-D1-21, 22, 23',
-                checkPoint: 'SMD상 S-D-1·2(FSF-60+61, 15,500) 기동 확인 — 법정 16,440 미달, S-D-3 전환 대상.',
+                checkPoint: 'SMD상 S-D-1·2(FSF-60+61, 15,500) 기동 확인 — 법정 16,440 미달, S-D-3 전환 대상. ★ 원 스케줄 표기는 FSF-62·S-D3, 1차보고서는 C동 휀(FSF-58) 오기 — 세 자료가 모두 다르므로 실제 출력 휀·메인댐퍼를 현장 실측란에 그대로 기록(S-D-3 개방 시 이미 전환된 것).',
                 note: '[검토보고서 02 / 실행계획서] L-158~160 통합, 법정 16,440CMH 대비 현행 FSF-60+61 15,500CMH(94.3%) 미달 → 부적합. 1차보고서 정정항목: D동 매장에 C동 휀 번호 오기. 개선: FSF-62/FEF-62(31,000, S-D-3/E-D-3) 계통 전환 검토(시설팀·CBRE/11월), 후속 풍량측정 대상.'
             },
 
@@ -545,7 +560,7 @@
                 type: '상호제연(스케줄) ↔ 단독제연(EM-005) 상충', method: '★현장확인', review: '부적합',
                 cmh: '41,000 (법정 40,000 → 102.5%)', fans: 'FSF/FEF-61+62 (41,000)',
                 openDampers: '[메인] S-D-2·3 / E-D-2·3\n[구역] 기록 미확보 (제연덕트 일람표 실번호18 대조)', closeDampers: 'OPEN 외 댐퍼',
-                checkPoint: '⑱ 감지 시 ⑲ 동시배기 여부(상호 vs 단독) 확정, FSF/FEF-61+62 기동, TG 개구 실측. ⑱·⑲ 개별 발보(최고난도, 단독배정).',
+                checkPoint: '⑱ 감지 시 ⑲ 동시배기 여부(상호 vs 단독) 확정, FSF/FEF-61+62 기동, TG 개구 실측(현행 1.96㎡ / 필요 약 2.39㎡). ⑱·⑲ 개별 발보(최고난도, 단독배정). ★ FSF-61은 무신사 키즈(B1L-151)와 공유 — 발보 시 무신사 키즈 구역댐퍼 폐쇄유지(오연동 없음) 확인.',
                 note: '[검토보고서 15, 4차 확정] 제연경계 구획(C.H 3,000, 수직거리 2m 이하), 직경 40m 이내, 법정 40,000CMH, 실배정 41,000 → 102.5%. 부적합 사유(풍량 무관): ① 원본 일람표 "상호제연" vs 전용도면 EM-005 "단독제연 개선" 서류 상충 ② 상호제연 시 ⑱⑲ 합계 1,086㎡로 §6④ 1,000㎡ 한도 초과(구역별 합산 1,088.55㎡와 차이 — 자료 정리 필요). 후속: 서류 일원화(시공사·설계사 합동확인), 풍량측정.'
             },
         };
@@ -554,7 +569,7 @@
                 id: '2f-b5', floor: '2F', wing: 'B', name: 'VIPS (빕스) "2"구역', zone: '2L-52 (80㎡)', isIntegrated: false, isMutual: false, isInspectionTarget: true, night: 'Day1',
                 type: '단독제연', method: '상부급기 상부배기', cmh: '스케줄 5,500 (법정 5,000 → 110.0%)',
                 openDampers: '[메인] ★현장확인\n[구역] 기록 미확보', closeDampers: 'OPEN 외 댐퍼', fans: '스케줄 5,500 (휀번호 미확정)', review: '점검요망',
-                checkPoint: '현장 댐퍼 명판·SMD 출력 기록으로 기동휀 번호 확정, "13"구역과 독립 인식(오연동 여부) 확인.',
+                checkPoint: '현장 댐퍼 명판·SMD 출력 기록으로 기동휀 번호 확정, "13"구역과 독립 인식(오연동 여부) 확인. ★ 기존 매핑 후보 FSF/FEF-54는 B동 휀(팬룸#2) — Day1에 팬룸#1뿐 아니라 #2의 FSF/FEF-54도 MCCB OFF 후 발보할 것(미차단 시 실제 송풍 발생).',
                 note: '[검토보고서 10 신규] 빕스 자체의 두 번째 독립 Zone(2026.08.17 사용자 확인). 80㎡×60=4,800 → 최저 5,000CMH 적용. 기존 검토의 FSF-54 매핑은 실행계획서에서 미확정으로 분류됨.',
                 planFiles: [{ label: 'A동,B동 2층 구역 평면도', path: '2층/A동, B동 2층 제연설비 구역 평면도.pdf' }]
             },
@@ -568,7 +583,7 @@
                 id: 'b1-d8', floor: 'B1F', wing: 'D', name: '챔피언더블랙벨트 ⑲', zone: 'B1L-166 (515.84㎡)', isIntegrated: false, isMutual: true, isInspectionTarget: true, night: 'Day4',
                 type: '상호제연(스케줄) ↔ 단독제연(EM-005) 상충', method: '★현장확인', cmh: '41,000 (법정 40,000 → 102.5%)',
                 openDampers: '[메인] S-D-2·3 / E-D-2·3\n[구역] 기록 미확보 (제연덕트 일람표 실번호19 대조)', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF/FEF-61+62 (41,000)', review: '부적합',
-                checkPoint: '⑲ 개별 발보 — ⑱ 급·배기 동작 여부(상호 vs 단독) 교차 확인, FSF/FEF-61+62 기동.',
+                checkPoint: '⑲ 개별 발보 — ⑱ 급·배기 동작 여부(상호 vs 단독) 교차 확인, FSF/FEF-61+62 기동. ★ 무신사 키즈(B1L-151, FSF-61 공유) 구역댐퍼 폐쇄유지 확인.',
                 note: '[검토보고서 15, 4차 확정] ⑱과 동일 사유로 부적합(서류 상충 + 상호제연 시 면적 한도 초과).'
             },
         ];
@@ -582,8 +597,30 @@
         });
         REVIEW_ADDITIONS.forEach(a => {
             initialStoreData.push(a);
-            REVIEW_PATCHES[a.id] = REVIEW_PATCHES[a.id] || {};
+            // 신규 카드도 정정치가 리비전 이전 저장값에 가려지지 않도록 모든 필드를 패치 키로 등록
+            const { id, floor, ...fields } = a;
+            REVIEW_PATCHES[a.id] = REVIEW_PATCHES[a.id] || fields;
         });
+
+        // 휀 ↔ 메인댐퍼 매핑 (현장검증 2026.08.19). A·B동은 역순(1=31,000), C·D동은 정순(1=5,500) — 접미번호로 용량 추정 금지
+        const FAN_MAP = {
+            51: { wing: 'A', cmh: 5500,  main: 'S-A-3 / E-A-3',          room: '#1' },
+            52: { wing: 'A', cmh: 10000, main: 'S-A-2 / E-A-2',          room: '#1' },
+            53: { wing: 'A', cmh: 31000, main: 'S-A-1 / E-A-1·E-A-1-1',  room: '#1' },
+            54: { wing: 'B', cmh: 5500,  main: 'S-B-3 / E-B-3',          room: '#2' },
+            55: { wing: 'B', cmh: 10000, main: 'S-B-2 / E-B-2',          room: '#2' },
+            56: { wing: 'B', cmh: 31000, main: 'S-B-1 / E-B-1·E-B-1-1',  room: '#2' },
+            57: { wing: 'C', cmh: 5500,  main: 'S-C-1 / E-C-1',          room: '#3' },
+            58: { wing: 'C', cmh: 10000, main: 'S-C-2 / E-C-2',          room: '#3' },
+            59: { wing: 'C', cmh: 31000, main: 'S-C-3 / E-C-3',          room: '#3' },
+            60: { wing: 'D', cmh: 5500,  main: 'S-D-1 / E-D-1',          room: '#5' },
+            61: { wing: 'D', cmh: 10000, main: 'S-D-2 / E-D-2',          room: '#5' },
+            62: { wing: 'D', cmh: 31000, main: 'S-D-3 / E-D-3',          room: '#5' },
+        };
+        function parseFans(text) {
+            const nums = (String(text || '').match(/\b(5[1-9]|6[0-2])\b/g) || []).map(Number);
+            return [...new Set(nums)].sort((a, b) => a - b);
+        }
 
 
 
@@ -641,12 +678,21 @@
                 try {
                     firebase.initializeApp(firebaseConfig);
                     db = firebase.firestore();
-                    db.collection('overrides').onSnapshot(snap => {
-                        const next = {};
-                        snap.forEach(doc => { next[doc.id] = doc.data(); });
-                        overridesCache = next;
-                        refreshCurrentView();
-                        setSyncStatus('🟢 실시간 공유 중', 'bg-emerald-900 text-emerald-300');
+                    // 지하·팬룸 등 통신 음영구역 대비: 오프라인 저장(재접속 시 자동 동기화). 다른 Firestore 호출보다 먼저 실행해야 함
+                    db.enablePersistence({ synchronizeTabs: true }).catch(e => console.warn('오프라인 저장 비활성:', e.code));
+                    let firstSnap = true;
+                    db.collection('overrides').onSnapshot({ includeMetadataChanges: true }, snap => {
+                        const dataChanged = firstSnap || snap.docChanges().length > 0;
+                        firstSnap = false;
+                        if (dataChanged) {
+                            const next = {};
+                            snap.forEach(doc => { next[doc.id] = doc.data(); });
+                            overridesCache = next;
+                            refreshCurrentView();
+                        }
+                        if (snap.metadata.hasPendingWrites) setSyncStatus('🟠 저장 대기 (통신 복구 시 자동 전송)', 'bg-orange-900 text-orange-300');
+                        else if (snap.metadata.fromCache) setSyncStatus('🟠 오프라인 (기기에 임시 보관)', 'bg-orange-900 text-orange-300');
+                        else setSyncStatus('🟢 실시간 공유 중', 'bg-emerald-900 text-emerald-300');
                     }, err => {
                         console.error('overrides sync error', err);
                         setSyncStatus('🔴 동기화 오류', 'bg-red-900 text-red-300');
@@ -723,21 +769,31 @@
             'Day1': 'Day1 · 10.19(월)~20(화)', 'Day2': 'Day2 · 10.20(화)~21(수)', 'Day3': 'Day3 · 10.21(수)~22(목)',
             'Day4': 'Day4 · 10.22(목)~23(금)', 'Day5': 'Day5 · 10.23(금)~24(토) 예비'
         };
+        // lockout: 실배정 휀이 도면과 다를 수 있으므로(한와담·빕스"2"·버핏·테라로사 등) 해당 동 팬룸의 휀을 전부 차단 후 발보
         const DAY_INFO = {
-            'Day1': { stores: 'A동 2F 한와담 + B동 2F 빕스("13"·"2")', fanroom: '#1', memo: '한와담 2L-10·11 동시개방 확인 · 착수 전 FSF/FEF-52·댐퍼 9점 복구상태 확인' },
-            'Day2': { stores: 'B동 1F 중앙해장 + C동 1F 딤딤섬', fanroom: '#2, #3', memo: '중앙해장 6구역 동시개방' },
-            'Day3': { stores: 'C동 1F 버핏그라운드 + D동 1F 테라로사', fanroom: '#3, #5', memo: '테라로사 S-D-1·2 기동 확인' },
-            'Day4': { stores: 'D동 B1F 챔피언더블랙벨트 (단독배정)', fanroom: '#5', memo: '최고난도 — ⑱·⑲ 개별 발보' },
-            'Day5': { stores: '예비일 — 미완료·재점검 구역 및 결과 정리', fanroom: '필요시', memo: '기상·실화재 등 순연 대비' },
+            'Day1': { stores: 'A동 2F 한와담 + B동 2F 빕스("13"·"2")', fanroom: '#1 (+#2 FSF-54)', lockout: '팬룸#1 FSF/FEF-51·52·53 전부 + 팬룸#2 FSF/FEF-54(빕스"2" 후보)', memo: '한와담 2L-10·11 동시개방 확인 · 착수 전 FSF/FEF-52·댐퍼 9점 복구상태 확인 · 빕스 발보 시 페이홍러우(2L-12) 공용댐퍼 동작 기록' },
+            'Day2': { stores: 'B동 1F 중앙해장 + C동 1F 딤딤섬', fanroom: '#2, #3', lockout: '팬룸#2 FSF/FEF-54·55·56 + 팬룸#3 FSF/FEF-57·58·59 전부', memo: '중앙해장 6구역 동시개방·구 FSF-54 미기동 · 딤딤섬 3구역 동시개방·FSF-57+58 동시기동' },
+            'Day3': { stores: 'C동 1F 버핏그라운드 + D동 1F 테라로사', fanroom: '#3, #5', lockout: '팬룸#3 FSF/FEF-57·58·59 + 팬룸#5 FSF/FEF-60·61·62 전부', memo: '버핏 구역별 실제 기동휀 확정(설계 45,000↔실배정 15,500 역전 의심) · 테라로사 실제 출력 휀(60+61 / 62) 기록' },
+            'Day4': { stores: 'D동 B1F 챔피언더블랙벨트 (단독배정)', fanroom: '#5', lockout: '팬룸#5 FSF/FEF-60·61·62 전부', memo: '최고난도 — ⑱·⑲ 개별 발보 · 무신사 키즈(FSF-61 공유) 오연동 없음 확인' },
+            'Day5': { stores: '예비일 — 미완료·재점검 구역 및 결과 정리', fanroom: '필요시', lockout: '재점검 대상 동 팬룸 휀 전부', memo: '기상·실화재 등 순연 대비 · 부적합 연세위시치과·매드포갈릭 편입 검토' },
         };
         const LEGACY_DAY = { N1: 'Day1', N2: 'Day2', N3: 'Day3', N4: 'Day4', N5: 'Day5' };
         function getDay(store) {
             return store.night ? (LEGACY_DAY[store.night] || store.night) : '';
         }
+        // 체크 항목 개정(10.16) — 기존 6항목 저장값과 섞이지 않도록 저장 키를 checksV2로 분리
+        const CHECK_KEY = 'checksV2';
         const CHECK_ITEMS = [
-            '① 감지기 동작 (자탐 겸용 신호)', '② 방화셔터 강하·정지 확인', '③ 구역 댐퍼 OPEN / N.C 확인',
-            '④ 휀 기동신호 — 지정 FSF/FEF 대조', '⑤ 동시연동 — 상호·통합구역 확인', '⑥ 복구: 셔터→감지기→AUTO→MCCB ON, MCC·방재실 교차확인'
+            '⓪ 사전: 일차별 LOTO 대상 휀 전부 MCCB OFF·잠금표지, 속보·비상방송 정지, 방재실·MCC 무전 확인',
+            '① 감지기 동작 — 수신기 구역·주소 표시가 해당 매장과 일치 (한와담 "판매시설 B" 오표기 사례)',
+            '② 방화셔터 강하·정지 확인',
+            '③ 구역 댐퍼 OPEN·확인신호 응답 / N.C 댐퍼 폐쇄유지',
+            '④ 메인 댐퍼 OPEN·응답 — 휀 매핑표와 일치',
+            '⑤ 휀 기동신호 출력(MCC 접점·수신기 표시) — 지정 FSF/FEF 대조, 지정 외 휀 출력 없음',
+            '⑥ 동시연동 — 통합·상호구역 전체 동작 / 인접·공유 매장 오연동 없음',
+            '⑦ 복구: 셔터→감지기→댐퍼 원위치·확인등 소등→제연 연동정지 해제(AUTO)→MCCB ON, MCC·방재실 교차확인'
         ];
+        function getChecks(store) { return store[CHECK_KEY] || []; }
         function rvClass(r) {
             if (!r) return '';
             if (r.includes('부적합')) return 'rv-부적합';
@@ -855,11 +911,11 @@
             const timeline = '<div class="mt-1.5 text-slate-500">22:30 집결·TBM → 23:00 설비전환(속보·방송 정지, 휀 MCCB OFF) → 23:15 연동점검 → 02:45 복구 → 03:30 최종확인 · <b class="text-red-600">03:30 이후 신규착수 금지, 04:00까지 전 설비 AUTO 복귀</b></div>';
             if (currentDayFilter === 'TARGET') {
                 box.innerHTML = '<div class="font-bold text-slate-800 mb-1">야간 무풍 연동점검 일정 (23:00~익일 04:00)</div>' +
-                    Object.keys(DAY_INFO).map(d => `<div><b>${esc(DAY_LABELS[d])}</b> — ${esc(DAY_INFO[d].stores)} <span class="text-slate-400">(팬룸 ${esc(DAY_INFO[d].fanroom)})</span></div>`).join('') + timeline;
+                    Object.keys(DAY_INFO).map(d => `<div><b>${esc(DAY_LABELS[d])}</b> — ${esc(DAY_INFO[d].stores)} <span class="text-slate-400">(팬룸 ${esc(DAY_INFO[d].fanroom)})</span><br><span class="text-red-600">🔒 ${esc(DAY_INFO[d].lockout)}</span></div>`).join('') + timeline;
                 box.classList.remove('hidden');
             } else if (DAY_INFO[currentDayFilter]) {
                 const i = DAY_INFO[currentDayFilter];
-                box.innerHTML = `<div class="font-bold text-slate-800">${esc(DAY_LABELS[currentDayFilter])} 23:00~04:00 · 팬룸/MCC ${esc(i.fanroom)}</div><div class="mt-0.5">${esc(i.stores)} — <span class="text-blue-700 font-semibold">${esc(i.memo)}</span></div>` + timeline;
+                box.innerHTML = `<div class="font-bold text-slate-800">${esc(DAY_LABELS[currentDayFilter])} 23:00~04:00 · 팬룸/MCC ${esc(i.fanroom)}</div><div class="mt-0.5">${esc(i.stores)} — <span class="text-blue-700 font-semibold">${esc(i.memo)}</span></div><div class="mt-1 font-bold text-red-700">🔒 MCCB OFF·LOTO 대상: ${esc(i.lockout)} <span class="font-normal text-red-500">(실배정 미확정 휀이 있으므로 지정 휀만 차단 금지)</span></div>` + timeline;
                 box.classList.remove('hidden');
             } else {
                 box.classList.add('hidden');
@@ -945,7 +1001,7 @@
                     </div>
                     <div class="flex items-center justify-between mt-1">
                         <div class="text-[10px] text-slate-500 font-mono bg-white bg-opacity-70 px-1.5 py-0.5 rounded inline-block self-start border border-slate-100">Zone: ${esc(store.zone)}</div>
-                        <div class="text-[10px] ${store.day ? 'text-red-600 font-bold' : 'text-slate-300'} whitespace-nowrap">${store.day ? esc(store.day) + (store.isInspectionTarget ? ` · ${(store.checks || []).filter(Boolean).length}/${CHECK_ITEMS.length}` : '') : '-'}</div>
+                        <div class="text-[10px] ${store.day ? 'text-red-600 font-bold' : 'text-slate-300'} whitespace-nowrap">${store.day ? esc(store.day) + (store.isInspectionTarget ? ` · ${getChecks(store).filter(Boolean).length}/${CHECK_ITEMS.length}` : '') : '-'}</div>
                     </div>
                 `;
                 container.appendChild(el);
@@ -1064,11 +1120,16 @@
             CHECK_ITEMS.forEach((label, i) => {
                 const row = document.createElement('label');
                 row.className = 'flex items-start gap-2 bg-slate-50 border border-slate-200 rounded px-2 py-1.5';
-                row.innerHTML = `<input type="checkbox" id="chk-${i}" class="mt-0.5" ${(store.checks || [])[i] ? 'checked' : ''}><span></span>`;
+                row.innerHTML = `<input type="checkbox" id="chk-${i}" class="mt-0.5" ${getChecks(store)[i] ? 'checked' : ''}><span></span>`;
                 row.querySelector('span').textContent = label;
                 cl.appendChild(row);
             });
             clWrap.classList.toggle('hidden', !store.isInspectionTarget);
+            renderFanMap(store);
+            document.getElementById('edit-field-fans').value = store.fieldFans || '';
+            document.getElementById('edit-field-dampers').value = store.fieldDampers || '';
+            document.getElementById('edit-inspector').value = store.inspector || '';
+            document.getElementById('inspected-at').textContent = store.inspectedAt ? ('판정기록 ' + new Date(store.inspectedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })) : '';
             const rvSel = document.getElementById('edit-review');
             if (store.review && ![...rvSel.options].some(o => o.value === store.review)) rvSel.add(new Option(store.review, store.review));
             rvSel.value = store.review || '';
@@ -1124,6 +1185,25 @@
             if (!fromRefresh) window.scrollTo(0, 0);
         }
 
+        // 상세 패널: 표기 휀 번호를 매핑표로 풀어 메인댐퍼·팬룸·정격을 보여주고, 타 동 휀·메인댐퍼 누락을 표시
+        function renderFanMap(store) {
+            const box = document.getElementById('fanmap-box');
+            const rows = document.getElementById('fanmap-rows');
+            const fans = parseFans(store.fans);
+            if (!fans.length) { box.classList.add('hidden'); return; }
+            const dampers = String(store.openDampers || '').replace(/\s/g, '');
+            rows.innerHTML = fans.map(n => {
+                const f = FAN_MAP[n];
+                const mainPrefix = 'S-' + f.wing + '-';
+                const crossWing = f.wing !== store.wing;
+                return `<div>FSF/FEF-${n} · ${f.cmh.toLocaleString()}CMH · 팬룸${f.room} · 메인 ${esc(f.main)}`
+                    + (crossWing ? ` <span class="text-amber-700 font-sans">⚠ ${f.wing}동 휀(매장 ${esc(store.wing)}동)</span>` : '')
+                    + (!dampers.includes(mainPrefix) ? ` <span class="text-slate-400 font-sans">· 개방목록에 ${mainPrefix} 메인댐퍼 미기재</span>` : '')
+                    + `</div>`;
+            }).join('') + (fans.length > 1 ? `<div class="font-sans text-slate-500 mt-0.5">※ 표기된 휀이 모두 동시기동인지, 대안 표기(스케줄/설계)인지 현장 실측으로 확정</div>` : '');
+            box.classList.remove('hidden');
+        }
+
         function reloadDetail() {
             if (!currentStoreId) return;
             detailDirty = false;
@@ -1171,10 +1251,17 @@
             const review = document.getElementById('edit-review').value;
             const night = document.getElementById('edit-night').value;
             const checks = CHECK_ITEMS.map((_, i) => !!document.getElementById('chk-' + i)?.checked);
+            const fieldFans = document.getElementById('edit-field-fans').value;
+            const fieldDampers = document.getElementById('edit-field-dampers').value;
+            const inspector = document.getElementById('edit-inspector').value;
+            const prev = getStoreData().find(s => s.id === currentStoreId) || {};
+            const inspectedAt = pendingStatus === '미점검' ? '' :
+                (pendingStatus !== prev.status || !prev.inspectedAt ? new Date().toISOString() : prev.inspectedAt);
 
             writeOverride(currentStoreId, {
                 name, wing, zone, type, isIntegrated, isMutual, isInspectionTarget, method, cmh,
-                openDampers, closeDampers, fans, memo, note, review, night, checks,
+                openDampers, closeDampers, fans, memo, note, review, night, [CHECK_KEY]: checks,
+                fieldFans, fieldDampers, inspector, inspectedAt,
                 status: pendingStatus, _rev: DATA_REV, updatedAt: new Date().toISOString()
             });
             detailDirty = false;
@@ -1261,6 +1348,27 @@
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // 결과 CSV (엑셀용) — 점검대상 매장의 도면값·현장실측·판정을 한 표로 (사후 결과보고서용)
+        function exportCsv() {
+            const rows = getStoreData().filter(s => s.isInspectionTarget)
+                .sort((a, b) => (a.day || 'Z').localeCompare(b.day || 'Z'));
+            const head = ['일차', '층', '동', '매장', 'Zone', '도면검토판정', '현장결과', '체크완료', '도면 기동휀', '현장 실측 기동휀', '현장 실측 댐퍼', '설계/법정 풍량', '현장메모', '점검자', '판정시각'];
+            const q = v => '"' + String(v ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' / ') + '"';
+            const lines = [head.map(q).join(',')].concat(rows.map(s => [
+                s.day, s.floor, s.wing + '동', s.name, s.zone, s.review, s.status,
+                `${getChecks(s).filter(Boolean).length}/${CHECK_ITEMS.length}`,
+                s.fans, s.fieldFans, s.fieldDampers, s.cmh, s.memo, s.inspector,
+                s.inspectedAt ? new Date(s.inspectedAt).toLocaleString('ko-KR') : ''
+            ].map(q).join(',')));
+            const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `wongrove_무풍점검결과_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
 
