@@ -402,7 +402,7 @@
             { id: '2f-c4', floor: '2F', wing: 'C', name: '누아주베이커리', zone: '2L-103', isIntegrated: false, isMutual: false, type: '단독제연', method: '상부급기 상부배기', cmh: '10,000', openDampers: 'S-C2-17,18 / E-C2-26,27', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-58 / FEF-58', note: 'C동 위치 매핑 정정', planFiles: [{ label: 'C동 2층 덕트스케줄·휀용량', path: '2층/C동 2층 제연덕트 스케줄 및 휀용량 메인뎀퍼 설명.pdf' }] },
             { id: '2f-c8', floor: '2F', wing: 'C', name: '숲속약국', zone: '2L-104', isIntegrated: false, isMutual: false, type: '단독제연', method: '상부급기 상부배기', cmh: '10,000', openDampers: 'S-C2-19,20 / E-C2-28,29', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-58 / FEF-58', note: '안녕이비인후과 옆', planFiles: [{ label: 'C동 2층 덕트스케줄·휀용량', path: '2층/C동 2층 제연덕트 스케줄 및 휀용량 메인뎀퍼 설명.pdf' }] },
             { id: '2f-c6', floor: '2F', wing: 'C', name: '더레어', zone: '2L-105', isIntegrated: false, isMutual: false, type: '단독제연', method: '상부급기 상부배기', cmh: '10,000', openDampers: 'S-C2-21,22 / E-C2-30,31', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-58 / FEF-58', note: 'C동 위치 매핑 정정', planFiles: [{ label: 'C동 2층 덕트스케줄·휀용량', path: '2층/C동 2층 제연덕트 스케줄 및 휀용량 메인뎀퍼 설명.pdf' }] },
-            { id: '2f-c3', floor: '2F', wing: 'C', name: '우리은행', zone: '2L-113', isIntegrated: false, isMutual: false, type: '단독제연', method: '상부급기 상부배기', cmh: '10,000', openDampers: 'S-C2-10 / E-C2-40', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-58 / FEF-58', note: '⚠ 도면 파일명은 "D동 2층"으로 기재되어 있으나 Zone 번호(2L-113)와 원본 스케줄표는 C동으로 명시 — 파일명 오기로 판단되나 현장에서 동(棟) 재확인 권장.', planFiles: [{ label: 'D동 2층 우리은행 덕트평면도', path: '2층/D동 2층 제연덕트(우리은행).pdf' }, { label: 'D동 2층 우리은행 평면도', path: '2층/D동 2층 제연설비 평면도 (우리은행).pdf' }] },
+            { id: '2f-c3', floor: '2F', wing: 'C', name: '우리은행', zone: '2L-113', isIntegrated: false, isMutual: false, type: '단독제연', method: '상부급기 상부배기', cmh: '10,000', openDampers: 'S-C2-10 / E-C2-40', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-58 / FEF-58', note: '⚠ 도면 파일명은 "D동 2층"으로 기재되어 있으나 Zone 번호(2L-113)와 원본 스케줄표는 C동으로 명시 — 파일명 오기로 판단되나 현장에서 동(棟) 재확인 권장.', planFiles: [{ label: 'C동 2층 우리은행 덕트평면도', path: '2층/C동 2층 제연덕트(우리은행).pdf' }, { label: 'C동 2층 우리은행 평면도', path: '2층/C동 2층 제연설비 평면도 (우리은행).pdf' }] },
             
             // ---------------- 2F D동 ----------------
             { id: '2f-d1', floor: '2F', wing: 'D', name: '제이엘정형외과', zone: '2L-159 (통합)', isIntegrated: true, isMutual: false, type: '단독제연', method: '상부급기 상부배기', cmh: '46,500', openDampers: 'S-D2-04, 29 / E-D2-03~08', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-60, 61, 62 / FEF-60, 61, 62', note: '2F L-159~165 대통합 유지.', planFiles: [{ label: 'D동 2층 제이엘정형외과', path: '2층/D동 2층 제연설비 제이엘 정형외과.pdf.pdf' }] },
@@ -768,6 +768,71 @@
             } catch (e) { return 'unknown'; }
         }
 
+        // 매장별 전용 도면 — D:\\원그로브\\소방도면\\거실제연검토\\판매시설 제연설비(검토중) 폴더 (2026.11.01 파일목록 대조)
+        // 기존 planFiles 뒤에 덧붙임. 25MB 초과(한와담 26.04.03 45MB, 바토스앤폴리스 43.7MB, VIPS 인테리어 29.4MB)는 제외
+        const R = '판매시설 제연설비(검토중)/';
+        const STORE_DOCS = {
+            '2f-a1': [ { label: '하이라인 덕트제연', path: '2층/하이라인 피부과 덕트제연.pdf' },
+                       { label: '하이라인 완공도면', path: R + 'A동 2층 하이라인피부과(검토)/원그로브 완공도면 (하이라인피부과).pdf' },
+                       { label: '검토보고서', path: R + 'A동 2층 하이라인피부과(검토)/하이라인피부과_검토보고서.pdf' } ],
+            '2f-a3': [ { label: '한와담 소방 거실제연 도면', path: R + 'A동 2층 한와담(검토)/한와담 마곡 원그로브점_소방 거실제연.pdf' },
+                       { label: '검토보고서(09)', path: R + 'A동 2층 한와담(검토)/09_한와담_거실제연_검토보고서.pdf' },
+                       { label: '검토 결과보고서(08.11)', path: R + 'A동 2층 한와담(검토)/20260811_원그로브_A동2층_한와담_거실제연설비_검토_결과보고서.pdf' } ],
+            '2f-a5': [ { label: '페이홍러우 제연설계도면(251205)', path: R + 'A동 2층 페이홍러우(검토)/마곡 원그로브 페이홍러우_제연설계도면 251205.pdf' },
+                       { label: '검토보고서', path: R + 'A동 2층 페이홍러우(검토)/페이홍러우_검토보고서.pdf' } ],
+            '2f-b4': [ { label: 'VIPS 거실제연 변경후 도면', path: R + 'B동 2층 빕스(검토)/CJ VIPS 마곡 원그로브 거실제연 변경후 도면.pdf' },
+                       { label: 'VIPS 제연도면 변경전후', path: R + 'B동 2층 빕스(검토)/CJ VIPS 마곡 원그로브 제연도면 변경전후.pdf' },
+                       { label: '검토보고서', path: R + 'B동 2층 빕스(검토)/빕스_검토보고서.pdf' },
+                       { label: '검토 상황보고서(08.11)', path: R + 'B동 2층 빕스(검토)/20260811_원그로브_B동2층_VIPS_거실제연설비_검토_상황보고서.pdf' } ],
+            '2f-b5': [ { label: 'VIPS 거실제연 변경후 도면', path: R + 'B동 2층 빕스(검토)/CJ VIPS 마곡 원그로브 거실제연 변경후 도면.pdf' },
+                       { label: 'VIPS 제연도면 변경전후', path: R + 'B동 2층 빕스(검토)/CJ VIPS 마곡 원그로브 제연도면 변경전후.pdf' },
+                       { label: '검토보고서', path: R + 'B동 2층 빕스(검토)/빕스_검토보고서.pdf' } ],
+            '2f-c3': [ { label: '우리은행 이전 LAY-OUT(설비)', path: R + '우리은행/마곡역금융센터 이전LAY-OUT공사(설비).pdf' } ],
+            '2f-d1': [ { label: '제이엘 제연설비 도면', path: R + 'D동 2층 제이엘정형외과(검토)/05. 마곡 제이엘 정형외과 제연설비 도면.pdf' },
+                       { label: '검토보고서', path: R + 'D동 2층 제이엘정형외과(검토)/제이엘정형외과_검토보고서.pdf' } ],
+            '2f-d2': [ { label: '검토보고서', path: R + 'D동 2층 연세위시치과(검토)/연세위시치과_검토보고서.pdf' } ],
+            '1f-a8': [ { label: '공탕·숙성도 제연설비 준공도서', path: R + '숙성도/공탕,숙성도 원그로브점 제연설비 준공도서.pdf' } ],
+            '1f-a9': [ { label: '공탕·숙성도 제연설비 준공도서', path: R + '숙성도/공탕,숙성도 원그로브점 제연설비 준공도서.pdf' } ],
+            '1f-b1': [ { label: '중앙해장 거실제연 변경후 도면', path: R + 'B동 1층 중앙해장(검토)/원그로브_B동1층_중앙해장_거실제연 변경후 도면.pdf' },
+                       { label: '중앙해장 소방설비 도면', path: R + 'B동 1층 중앙해장(검토)/03 소방설비.pdf' },
+                       { label: '검토보고서', path: R + 'B동 1층 중앙해장(검토)/중앙해장_검토보고서.pdf' },
+                       { label: '검토 상황보고서(08.18)', path: R + 'B동 1층 중앙해장(검토)/20260818_원그로브_B동1층_중앙해장_거실제연설비_검토_상황보고서.pdf' } ],
+            '1f-b2': [ { label: '파리크라상 제연덕트 준공도면(날인)', path: R + 'B동 1층 파리크라상(검토)/SPC 파리크라상 마곡원그로브점_기계소방 제연덕트 준공도면_날인본.pdf' },
+                       { label: '제3차 제연설비 기술검토의견서', path: R + 'B동 1층 파리크라상(검토)/제3차 SPC 파리크라상 원그로브전 제연설비 기술검토의견서_합본.pdf' },
+                       { label: '검토보고서', path: R + 'B동 1층 파리크라상(검토)/파리크라상_검토보고서.pdf' } ],
+            '1f-c1': [ { label: '딤딤섬 거실제연 변경후 도면', path: R + 'C동 1층 딤딤섬(검토)/마곡 원그로브 딤딤섬 거실제연 변경후 도면.pdf' },
+                       { label: '딤딤섬 거실제연설비 도면', path: R + 'C동 1층 딤딤섬(검토)/마곡 원그로브 딤딤섬 거실제연설비 도면.pdf' },
+                       { label: '검토보고서', path: R + 'C동 1층 딤딤섬(검토)/딤딤섬_검토보고서.pdf' } ],
+            '1f-c2': [ { label: '매드포갈릭 제연덕트도면(기술사 확인)', path: R + 'C동 1층 매드포갈릭/매드포갈릭 마곡점 제연덕트도면_기술사 확인서.pdf' },
+                       { label: '검토보고서', path: R + 'C동 1층 매드포갈릭/매드포갈릭_검토보고서.pdf' } ],
+            '1f-c5': [ { label: '버핏 거실제연 변경도면', path: R + 'C동 1층 버핏그라운드(검토)/버핏그라운드 원그로브점 거실제연 변경도면.pdf' },
+                       { label: '버핏 소방설비(직인)', path: R + 'C동 1층 버핏그라운드(검토)/05.버핏그라운드 원그로브점 소방설비_직인표시 2025.08.pdf' },
+                       { label: '제연설비 검토의견서(250819)', path: R + 'C동 1층 버핏그라운드(검토)/버핏그라운드 원그로브점 제연설비 검토의견서 250819.pdf' },
+                       { label: '검토보고서', path: R + 'C동 1층 버핏그라운드(검토)/버핏그라운드_검토보고서.pdf' } ],
+            '1f-d1': [ { label: '테라로사 거실제연 변경후 도면', path: R + 'D동 1층 테라로사(검토)/테라로사_원그로브점_거실제연 변경후 도면.pdf' },
+                       { label: '테라로사 설비도면(기술사날인)', path: R + 'D동 1층 테라로사(검토)/테라로사_원그로브점_설비도면(기술사날인).pdf' },
+                       { label: '검토보고서', path: R + 'D동 1층 테라로사(검토)/테라로사_검토보고서.pdf' } ],
+            'b1-a3': [ { label: '무신사 하부급기 그릴 의견서', path: R + 'A동 지하1층 무신사 스탠다드/251017_MS_원그로브점_하부급기 그릴 의견서.pdf' },
+                       { label: '무신사 기계종합', path: R + 'A동 지하1층 무신사 스탠다드/260122_MS_원그로브점_기계종합.pdf' },
+                       { label: '검토보고서', path: R + 'A동 지하1층 무신사 스탠다드/무신사_검토보고서.pdf' } ],
+            'b1-a4': [ { label: '검토보고서', path: R + 'A동 지하1층 유니클로/유니클로_검토보고서.pdf' },
+                       { label: '검토 상황보고서(08.18)', path: R + 'A동 지하1층 유니클로/20260818_원그로브_A동지하1층_유니클로_거실제연설비_검토_상황보고서.pdf' } ],
+            'b1-c7': [ { label: '아트박스 준공도면', path: R + '아트박스/01 아트박스_원그로브몰_준공도면.pdf' } ],
+            'b1-d3': [ { label: 'JAJU 준공도면', path: R + 'JAJU/01.준공도면_JAJU_원그로브몰.pdf' } ],
+        };
+        const CHAMPION_DOCS = [
+            { label: '챔피언 거실제연 변경후 도면', path: R + 'D동 지하1층 챔피언더블랙벨트(검토)/원그로브몰 마곡점_챔피언 _거실제연 변경후 도면.pdf' },
+            { label: '챔피언 상상스케치 제연 변경후', path: R + 'D동 지하1층 챔피언더블랙벨트(검토)/원그로브몰 마곡점_챔피언 내 상상스케치_제연설비 변경후 도면.pdf' },
+            { label: '제연덕트(기술사직인)', path: R + 'D동 지하1층 챔피언더블랙벨트(검토)/원그로브 마곡점_제연덕트(기술사직인).pdf' },
+            { label: '검토보고서', path: R + 'D동 지하1층 챔피언더블랙벨트(검토)/챔피언더블랙벨트_검토보고서.pdf' } ];
+        STORE_DOCS['b1-d6'] = CHAMPION_DOCS; STORE_DOCS['b1-d8'] = CHAMPION_DOCS;
+        function withStoreDocs(store) {
+            const extra = STORE_DOCS[store.id];
+            if (!extra) return store;
+            const seen = new Set((store.planFiles || []).map(d => d.path));
+            return { ...store, planFiles: [...(store.planFiles || []), ...extra.filter(d => !seen.has(d.path))] };
+        }
+
         // 층별 기본 도면 (구역평면도/덕트평면도 등 층 전체를 다루는 도면)
         const FLOOR_DOCS = {
             '2F': [
@@ -775,16 +840,25 @@
                 { label: '2F 덕트 평면도', path: '2층/2층 제연설비 덕트  평면도.pdf' },
                 { label: '2F 죠닝도(변경후)', path: '2층/MF-202 지상2층 거실제연설비 죠닝도(변경후).pdf' },
                 { label: 'A·B동 2F 구역평면도', path: '2층/A동, B동 2층 제연설비 구역 평면도.pdf' },
+                { label: '2F 구역도(변경반영 v5)', path: '지상2층_거실제연구역도_변경반영_v5.pdf' },
+                { label: '휀용량·메인댐퍼 정리(전체)', path: '거실제연휀 용량 및 메인댐퍼 정리.pdf' },
             ],
             '1F': [
                 { label: '1F 구역 평면도(전체)', path: '1층/1층 제연설비 구역 평면도.pdf' },
                 { label: '1F 덕트 일람표', path: '1층/1층 거실제연댐퍼 덕트 일람표.pdf' },
                 { label: '1F 휀용량·메인댐퍼 설명', path: '1층/ABCD동 1층 제연덕트  휀용량 및 메인댐퍼 설명.pdf' },
+                { label: 'B동 1F 확대평면도', path: 'B동 지상1층 거실제연설비 확대평면도..pdf' },
+                { label: 'C동 1F 확대평면도', path: 'C동 지상1층 거실제연설비 확대평면도..pdf' },
+                { label: 'D동 1F 확대평면도', path: 'D동 지상1층 거실제연설비 확대평면도..pdf' },
+                { label: '1F 구역도(변경반영 v5)', path: '지상1층_거실제연구역도_변경반영_v5.pdf' },
+                { label: '휀용량·메인댐퍼 정리(전체)', path: '거실제연휀 용량 및 메인댐퍼 정리.pdf' },
                 { label: '임대차현황 평면도(넘버링)', path: 'Retail 임대차현황 평면도(넘버링)_260522.pdf' },
             ],
             'B1F': [
                 { label: 'B1F 구역 평면도', path: '지하1층/지하 1층 제연설비 구역 평면도.pdf' },
                 { label: 'B1F 스케줄', path: '지하1층/지하 1층 제연설비 스케줄.pdf' },
+                { label: 'B1F 구역도(변경반영 v5)', path: '지하1층_거실제연구역도_변경반영_v5 (1).pdf' },
+                { label: '휀용량·메인댐퍼 정리(전체)', path: '거실제연휀 용량 및 메인댐퍼 정리.pdf' },
                 { label: '임대차현황 평면도(넘버링)', path: 'Retail 임대차현황 평면도(넘버링)_260522.pdf' },
             ],
             // B2F(지하2층 이마트 트레이더스)는 점검 대상 제외 — 도면 링크도 함께 제거함.
@@ -902,7 +976,7 @@
                     const merged = { ...store, status: '미점검', memo: '', review: store.review || '', note: store.note || '', ...ov };
                     merged.day = getDay(merged);
                     if (finalOf(merged.id)) merged.isInspectionTarget = true; // 10.29 최종판정 대상은 저장값과 무관하게 점검대상으로 표시
-                    return merged;
+                    return withStoreDocs(merged);
                 })
                 .filter(store => !store.deleted);
         }
