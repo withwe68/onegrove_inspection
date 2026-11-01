@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>거실제연 무풍연동점검 결과보고</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{
+    --bg:#f4f6f9; --paper:#fff; --ink:#1e293b; --sub:#64748b; --line:#e2e8f0; --head:#0f172a;
+    --ok:#15803d; --ok-bg:#dcfce7; --cond:#0e7490; --cond-bg:#cffafe;
+    --warn:#b45309; --warn-bg:#fef3c7; --retest:#6d28d9; --retest-bg:#ede9fe;
+    --ng:#b91c1c; --ng-bg:#fee2e2; --accent:#1d4ed8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Pretendard,'Malgun Gothic',sans-serif;font-size:14px;line-height:1.55}
+  .nav{background:var(--head);color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;position:sticky;top:0;z-index:5}
+  .nav a,.nav button{color:#fff;background:#334155;border:0;border-radius:6px;padding:7px 12px;font:inherit;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer}
+  .nav a:hover,.nav button:hover{background:#475569}
+  .wrap{max-width:1100px;margin:0 auto;padding:20px 16px 48px}
+  .paper{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:28px}
+  h1{font-size:22px;margin:0 0 4px}
+  h2{font-size:16px;margin:28px 0 10px;padding-left:10px;border-left:4px solid var(--accent)}
+  .doc-sub{color:var(--sub);font-size:12px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{border:1px solid var(--line);padding:7px 9px;vertical-align:top;text-align:left}
+  th{background:#f1f5f9;font-weight:700;white-space:nowrap}
+  .meta th{width:110px}
+  .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .center{text-align:center}
+  .conclusion{margin-top:14px;padding:12px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-weight:600}
+  .cards{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .card{border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+  .card .k{font-size:11.5px;font-weight:700}
+  .card .v{font-size:24px;font-weight:800;margin:2px 0}
+  .card .n{font-size:11.5px;color:var(--sub)}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap}
+  .g-적합{color:var(--ok);background:var(--ok-bg)} .g-조건부적합{color:var(--cond);background:var(--cond-bg)}
+  .g-보완필요{color:var(--warn);background:var(--warn-bg)} .g-재시험{color:var(--retest);background:var(--retest-bg)}
+  .g-부적합{color:var(--ng);background:var(--ng-bg)}
+  .c-적합{border-top:4px solid var(--ok)} .c-조건부적합{border-top:4px solid var(--cond)}
+  .c-보완필요{border-top:4px solid var(--warn)} .c-재시험{border-top:4px solid var(--retest)} .c-부적합{border-top:4px solid var(--ng)}
+  .c-적합 .v{color:var(--ok)} .c-조건부적합 .v{color:var(--cond)} .c-보완필요 .v{color:var(--warn)} .c-재시험 .v{color:var(--retest)} .c-부적합 .v{color:var(--ng)}
+  .bars{display:grid;grid-template-columns:150px 1fr 90px;gap:6px 10px;align-items:center;font-size:12.5px}
+  .track{position:relative;height:16px;background:#f1f5f9;border-radius:4px}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  .range{position:absolute;top:0;bottom:0;border-radius:4px;opacity:.85}
+  .legal{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+  .axis{grid-column:2;position:relative;height:14px;font-size:10.5px;color:var(--sub)}
+  .axis span{position:absolute;transform:translateX(-50%)}
+  .note{font-size:11.5px;color:var(--sub);margin-top:6px}
+  .finding{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+  .finding b{font-size:13px} .finding .cnt{color:var(--sub);font-size:12px;margin-left:6px}
+  .finding ul{margin:6px 0 0;padding-left:18px}
+  .timeline td:first-child{white-space:nowrap;font-weight:700;color:var(--accent)}
+  .sign{display:flex;justify-content:flex-end;margin-top:24px}
+  .sign table{width:auto} .sign td{width:84px;height:56px} .sign th{text-align:center}
+  footer{margin-top:20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:11.5px;color:var(--sub)}
+  @media (max-width:760px){
+    .paper{padding:16px} .cards{grid-template-columns:repeat(2,1fr)}
+    .bars{grid-template-columns:96px 1fr 64px} .tbl-scroll{overflow-x:auto}
+    .tbl-scroll table{min-width:900px}
+  }
+  @media print{
+    @page{size:A4 landscape;margin:10mm}
+    body{background:#fff;font-size:11.5px} .nav{display:none} .wrap{max-width:none;padding:0}
+    .paper{border:0;padding:0} h2{break-after:avoid} tr,.finding{break-inside:avoid}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+<div class="nav">
+  <a href="index.html">← 점검 대시보드</a>
+  <span style="font-size:12px;opacity:.8">결과보고 (읽기 전용)</span>
+  <button onclick="window.print()">인쇄 / PDF</button>
+</div>
+
+<div class="wrap"><div class="paper">
+  <div class="doc-sub" id="docno"></div>
+  <h1 id="title"></h1>
+  <div class="doc-sub" id="subline"></div>
+
+  <h2>1. 점검 개요</h2>
+  <table class="meta"><tbody id="meta"></tbody></table>
+  <div class="conclusion" id="conclusion"></div>
+
+  <h2>2. 종합 판정</h2>
+  <div class="cards" id="cards"></div>
+
+  <h2>3. 법정최소배출량 대비 충족률</h2>
+  <div class="bars" id="bars"></div>
+  <p class="note">충족률 = 실제 기동휀 정격풍량 ÷ NFPC 501 제6조 법정최소배출량. 검은 선이 법정기준(100%)입니다. 무풍점검이므로 실측풍량이 아니며, 실풍량은 11월 TAB에서 확인합니다. 막대 색은 현장 판정을 따릅니다(충족률이 100%를 넘어도 연동 결함이 있으면 보완·재시험).</p>
+
+  <h2>4. 매장별 점검 결과</h2>
+  <div class="tbl-scroll"><table>
+    <thead><tr>
+      <th>매장</th><th>위치</th><th>실제 기동휀</th><th class="num">정격 CMH</th><th class="num">법정최소 CMH</th>
+      <th class="num">충족률</th><th>도면검토 → 현장</th><th>핵심 사유</th><th>조치</th>
+    </tr></thead>
+    <tbody id="rows"></tbody>
+  </table></div>
+
+  <h2>5. 주요 지적사항</h2>
+  <div id="findings"></div>
+
+  <h2>6. 조치계획</h2>
+  <table class="timeline"><thead><tr><th>기한</th><th>조치</th><th>내용</th><th>담당</th></tr></thead><tbody id="plan"></tbody></table>
+
+  <h2>7. 요청·협조 사항</h2>
+  <table><thead><tr><th>대상</th><th>요청 내용</th></tr></thead><tbody id="req"></tbody></table>
+
+  <div class="sign"><table>
+    <tr><th>작성</th><th>검토</th><th>승인</th></tr>
+    <tr><td></td><td></td><td></td></tr>
+    <tr><th>소방파트장</th><th>시설팀장</th><th>총괄소장</th></tr>
+  </table></div>
+
+  <footer>
+    <span>원그로브 마곡 CP4 종합방재실 · 특급소방안전관리자</span>
+    <span id="foot"></span>
+  </footer>
+</div></div>
+
+<script src="report-data.js"></script>
+<script>
+(function(){
+  const D = window.REPORT_DATA, M = D.meta, S = D.stores;
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const fmt = n => n == null ? 'Zone별' : n.toLocaleString('ko-KR');
+  const label = g => g === '조건부적합' ? '적합(조건부)' : g;
+  const badge = g => `<span class="badge g-${g}">${label(g)}</span>`;
+
+  $('docno').textContent = `문서번호 ${M.docNo} · 보고일 ${M.reportDate} · 판정기준 ${M.basisDate} 정리본`;
+  $('title').textContent = M.title;
+  $('subline').textContent = `${M.site} · 작성 ${M.author}`;
+  $('meta').innerHTML = [
+    ['점검일시', M.period], ['점검방법', M.method], ['판정근거', M.basis],
+    ['대상', M.scope], ['편성', M.crew], ['대상 제외', M.excluded]
+  ].map(([k,v]) => `<tr><th>${k}</th><td>${esc(v)}</td></tr>`).join('');
+  $('conclusion').textContent = '종합 결론 — ' + M.conclusion;
+
+  const order = ['부적합','보완필요','재시험','조건부적합','적합'];
+  $('cards').innerHTML = order.map(g => {
+    const list = S.filter(s => s.grade === g);
+    return `<div class="card c-${g}"><div class="k">${label(g)}</div><div class="v">${list.length}</div>
+      <div class="n">${list.map(s => esc(s.name)).join(', ') || '—'}</div></div>`;
+  }).join('');
+
+  const max = 220, pct = v => Math.min(v, max) / max * 100;
+  const color = {'적합':'var(--ok)','조건부적합':'var(--cond)','보완필요':'var(--warn)','재시험':'var(--retest)','부적합':'var(--ng)'};
+  $('bars').innerHTML = S.map(s => {
+    const bar = s.rateMax
+      ? `<div class="range" style="left:${pct(s.rate)}%;width:${pct(s.rateMax)-pct(s.rate)}%;background:${color[s.grade]}"></div>`
+      : `<div class="fill" style="width:${pct(s.rate)}%;background:${color[s.grade]}"></div>`;
+    const txt = s.rateMax ? `${s.rate}~${s.rateMax}%` : `${s.rate.toFixed(1)}%`;
+    return `<div>${esc(s.name)}</div><div class="track">${bar}<div class="legal" style="left:${pct(100)}%"></div></div><div class="num">${txt}</div>`;
+  }).join('') + `<div></div><div class="axis">${[0,50,100,150,200].map(v=>`<span style="left:${pct(v)}%">${v}%</span>`).join('')}</div><div></div>`;
+
+  $('rows').innerHTML = order.flatMap(g => S.filter(s => s.grade === g)).map(s => `
+    <tr>
+      <td><b>${esc(s.name)}</b></td><td>${esc(s.loc)}</td><td>${esc(s.fan)}</td>
+      <td class="num">${fmt(s.ratedCmh)}</td><td class="num">${fmt(s.legalCmh)}</td>
+      <td class="num"><b>${s.rateMax ? s.rate+'~'+s.rateMax : s.rate.toFixed(1)}%</b></td>
+      <td>${esc(s.review)} → ${badge(s.grade)}</td><td>${esc(s.reason)}</td><td>${esc(s.action)}</td>
+    </tr>`).join('');
+
+  $('findings').innerHTML = D.findings.map((f,i) => `
+    <div class="finding"><b>${i+1}. ${esc(f.title)}</b><span class="cnt">${esc(f.count)}</span>
+    <ul>${f.items.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`).join('');
+
+  $('plan').innerHTML = D.plan.map(p => `<tr><td>${esc(p.when)}</td><td><b>${esc(p.title)}</b></td><td>${esc(p.body)}</td><td>${esc(p.owner)}</td></tr>`).join('');
+  $('req').innerHTML = D.requests.map(r => `<tr><th>${esc(r.to)}</th><td>${esc(r.body)}</td></tr>`).join('');
+  $('foot').textContent = `문서번호 ${M.docNo} | 내부용 — 외부 배포 금지`;
+})();
+</script>
+</body>
+</html>
