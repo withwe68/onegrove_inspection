@@ -108,7 +108,7 @@
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
             <div>
                 <h1 class="text-xl font-bold tracking-tight">원그로브 거실제연 점검 대시보드</h1>
-                <p class="text-xs text-slate-400 mt-1">야간 무풍 연동점검 실시 2026.10.22(목)~10.23(금) · 8개 매장 · 8명 · 최종판정 2026.10.29 정리본 기준 (계획: 실행계획서 10.08 / Day 표기는 계획 일정)</p>
+                <p class="text-xs text-slate-400 mt-1">야간 무풍 연동점검 실시 2026.10.22(목)~10.23(금) · 8개 매장 · 8명 · 최종판정 2026.10.29 정리본 기준 · 11월 보완조치 후 재시험 예정</p>
             </div>
             <div class="flex gap-2 items-center">
                 <a href="report.html" class="px-3 py-2 bg-sky-700 hover:bg-sky-600 text-white text-xs font-bold rounded-lg shadow-sm whitespace-nowrap" title="무풍연동점검 결과보고서 (읽기 전용·인쇄)">📄 결과보고서</a>
@@ -253,14 +253,14 @@
                         <input id="edit-name" type="text" class="w-full text-xl font-extrabold text-slate-900 border-b-2 border-slate-200 focus:border-blue-500 outline-none pb-1" placeholder="매장명 입력...">
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 gap-3">
                         <div>
                             <p class="text-[11px] text-slate-500 font-medium mb-1">도면검토 판정 (검토보고서 확정값)</p>
                             <select id="edit-review" class="w-full text-xs font-bold border border-slate-300 rounded px-2 py-1.5 bg-white">
                                 <option value="">미검토</option><option>적합</option><option>적합(여유율 주의)</option><option>적합→재검토</option><option>부적합</option><option>검토요망</option><option>점검요망</option>
                             </select>
                         </div>
-                        <div>
+                        <div class="hidden"><!-- 계획 일차 선택: 실제 실시(10.22~23)로 의미 상실, 화면에서 제거(기존 저장값 보존용으로만 유지) -->
                             <p class="text-[11px] text-slate-500 font-medium mb-1">야간점검 일차</p>
                             <select id="edit-night" class="w-full text-xs font-bold border border-slate-300 rounded px-2 py-1.5 bg-white">
                                 <option value="">미배정</option><option value="Day1">Day1 · 10.19(월)</option><option value="Day2">Day2 · 10.20(화)</option><option value="Day3">Day3 · 10.21(수)</option><option value="Day4">Day4 · 10.22(목)</option><option value="Day5">Day5 · 10.23(금) 예비</option>
@@ -338,6 +338,7 @@
                         </div>
                         <input type="text" id="viewer-url" class="flex-1 min-w-[120px] text-xs p-1.5 border border-slate-300 rounded" placeholder="로컬 PDF 상대경로 또는 외부 URL 직접 입력 (클릭하면 팝업으로 열립니다)">
                         <button onclick="loadViewerUrl()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded font-medium whitespace-nowrap shrink-0">팝업으로 보기</button>
+                        <button onclick="checkAllDocs()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-xs rounded font-medium whitespace-nowrap shrink-0" title="모든 도면 링크의 파일 존재 여부 확인">🔍 도면 링크 점검</button>
                     </div>
                     <div id="viewer-floor-docs" class="flex gap-1.5 overflow-x-auto"></div>
                 </div>
@@ -366,10 +367,12 @@
         <div class="absolute inset-2 sm:inset-6 md:inset-10 bg-white rounded-lg shadow-2xl flex flex-col overflow-hidden">
             <div class="h-12 bg-slate-800 px-4 flex items-center justify-between shrink-0">
                 <span id="doc-modal-title" class="text-white text-sm font-bold truncate pr-4"></span>
+                <a id="doc-modal-newtab" href="#" target="_blank" rel="noopener" class="ml-auto mr-2 px-2.5 py-1 bg-slate-600 hover:bg-slate-500 text-white text-xs rounded font-bold whitespace-nowrap shrink-0">새 탭에서 열기</a>
                 <button onclick="closeDocModal()" class="text-white hover:text-red-400 text-2xl leading-none px-2 shrink-0" title="닫기">&times;</button>
             </div>
             <div class="flex-1 relative bg-slate-300">
                 <iframe id="doc-modal-frame" class="w-full h-full border-none" src="about:blank"></iframe>
+                <div id="doc-modal-msg" class="hidden absolute inset-0 overflow-auto bg-white p-5 text-sm text-slate-700"></div>
             </div>
         </div>
     </div>
@@ -383,8 +386,8 @@
         const initialStoreData = [
             // ================================ 2F ================================
             // ---------------- 2F A동 ----------------
-            { id: '2f-a1', floor: '2F', wing: 'A', name: '하이라인피부과', zone: '2L-1~4 (통합)', isIntegrated: true, isMutual: false, type: '단독제연', method: '하부급기 상부배기', cmh: '45,000', openDampers: 'S-A2-01~04, 22 / E-A2-01~06, 45', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-52 / FEF-52', note: '기존 2L-1~4 구역 대통합. 하부급기로 변경됨. (원본 스케줄표 대조: 통합 풍량 45,000CMH이 4개 구역 합산치와 맞는지, 댐퍼·휀 목록이 4개 구역 전체 커버하는지 재확인 필요)', planFiles: [{ label: 'A동,B동 2층 구역 평면도', path: '제연설비 수정/2층/A동, B동 2층 제연설비 구역 평면도.pdf' }] },
-            { id: '2f-a5', floor: '2F', wing: 'A', name: '페이홍러우', zone: '2L-12', isIntegrated: false, isMutual: true, type: '상호제연', method: '인접구역급기(2L-13)/상부배기', cmh: '46,500', openDampers: 'S-A2-20, 21, 23 / E-A2-17, 19~22, 45\nS-A1, 2, 3 / E-A1, 2, 3, 1-1', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-51, 52, 53 / FEF-51, 52, 53', note: '제연덕트 스케줄 2층 A동 실번호12 기준 정정 (기존 2L-51·B동 댐퍼 공유 표기 오류 수정). 인접구역(2L-13, VIPS)과 상호제연으로 연동됨. ⚠ 원본 스케줄표/정리 엑셀에는 옛 값(Zone 2L-51, S-B2-12·18/E-B2-17·18·20·35, FSF-54·55)이 남아있어 상충 — 이 항목은 덕트 평면도 실번호 확인을 거친 정정치이므로 유지하되, 현장 재검증 권장.', planFiles: [{ label: 'A동,B동 2층 구역 평면도', path: '제연설비 수정/2층/A동, B동 2층 제연설비 구역 평면도.pdf' }, { label: '2F 덕트 평면도', path: '제연설비 수정/2층/2층 제연설비 덕트  평면도.pdf' }] },
+            { id: '2f-a1', floor: '2F', wing: 'A', name: '하이라인피부과', zone: '2L-1~4 (통합)', isIntegrated: true, isMutual: false, type: '단독제연', method: '하부급기 상부배기', cmh: '45,000', openDampers: 'S-A2-01~04, 22 / E-A2-01~06, 45', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-52 / FEF-52', note: '기존 2L-1~4 구역 대통합. 하부급기로 변경됨. (원본 스케줄표 대조: 통합 풍량 45,000CMH이 4개 구역 합산치와 맞는지, 댐퍼·휀 목록이 4개 구역 전체 커버하는지 재확인 필요)', planFiles: [{ label: 'A동,B동 2층 구역 평면도', path: '2층/A동, B동 2층 제연설비 구역 평면도.pdf' }] },
+            { id: '2f-a5', floor: '2F', wing: 'A', name: '페이홍러우', zone: '2L-12', isIntegrated: false, isMutual: true, type: '상호제연', method: '인접구역급기(2L-13)/상부배기', cmh: '46,500', openDampers: 'S-A2-20, 21, 23 / E-A2-17, 19~22, 45\nS-A1, 2, 3 / E-A1, 2, 3, 1-1', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-51, 52, 53 / FEF-51, 52, 53', note: '제연덕트 스케줄 2층 A동 실번호12 기준 정정 (기존 2L-51·B동 댐퍼 공유 표기 오류 수정). 인접구역(2L-13, VIPS)과 상호제연으로 연동됨. ⚠ 원본 스케줄표/정리 엑셀에는 옛 값(Zone 2L-51, S-B2-12·18/E-B2-17·18·20·35, FSF-54·55)이 남아있어 상충 — 이 항목은 덕트 평면도 실번호 확인을 거친 정정치이므로 유지하되, 현장 재검증 권장.', planFiles: [{ label: 'A동,B동 2층 구역 평면도', path: '2층/A동, B동 2층 제연설비 구역 평면도.pdf' }, { label: '2F 덕트 평면도', path: '2층/2층 제연설비 덕트  평면도.pdf' }] },
             { id: '2f-a2', floor: '2F', wing: 'A', name: '구름떡', zone: '2L-7', isIntegrated: false, isMutual: false, type: '단독제연', method: '상부급기 상부배기', cmh: '5,500', openDampers: 'S-A2-07, 23 / E-A2-35, 44', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-51 / FEF-51', note: '' },
             { id: '2f-a3', floor: '2F', wing: 'A', name: '한와담', zone: '2L-10, 11', isIntegrated: false, isMutual: false, type: '단독제연', method: '상부급기 상부배기', cmh: '10,000 (각)', openDampers: '[2L-10] S-A2-14, 23 / E-A2-13, 14, 45 (S-A2/E-A2)\n[2L-11] S-A2-17, 23 / E-A2-15, 16, 45 (S-A2/E-A2)', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-52 / FEF-52', note: '급기구 900x500×2EA, 배기구 600x400×2EA(구역별 동일). 시공 덕트평면도 기준 덕트 랏그릴 및 MD 신설 4개소 반영, 2L-10/11 구역별 댐퍼 세부 최신화' },
 
@@ -399,7 +402,7 @@
             { id: '2f-c4', floor: '2F', wing: 'C', name: '누아주베이커리', zone: '2L-103', isIntegrated: false, isMutual: false, type: '단독제연', method: '상부급기 상부배기', cmh: '10,000', openDampers: 'S-C2-17,18 / E-C2-26,27', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-58 / FEF-58', note: 'C동 위치 매핑 정정', planFiles: [{ label: 'C동 2층 덕트스케줄·휀용량', path: '2층/C동 2층 제연덕트 스케줄 및 휀용량 메인뎀퍼 설명.pdf' }] },
             { id: '2f-c8', floor: '2F', wing: 'C', name: '숲속약국', zone: '2L-104', isIntegrated: false, isMutual: false, type: '단독제연', method: '상부급기 상부배기', cmh: '10,000', openDampers: 'S-C2-19,20 / E-C2-28,29', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-58 / FEF-58', note: '안녕이비인후과 옆', planFiles: [{ label: 'C동 2층 덕트스케줄·휀용량', path: '2층/C동 2층 제연덕트 스케줄 및 휀용량 메인뎀퍼 설명.pdf' }] },
             { id: '2f-c6', floor: '2F', wing: 'C', name: '더레어', zone: '2L-105', isIntegrated: false, isMutual: false, type: '단독제연', method: '상부급기 상부배기', cmh: '10,000', openDampers: 'S-C2-21,22 / E-C2-30,31', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-58 / FEF-58', note: 'C동 위치 매핑 정정', planFiles: [{ label: 'C동 2층 덕트스케줄·휀용량', path: '2층/C동 2층 제연덕트 스케줄 및 휀용량 메인뎀퍼 설명.pdf' }] },
-            { id: '2f-c3', floor: '2F', wing: 'C', name: '우리은행', zone: '2L-113', isIntegrated: false, isMutual: false, type: '단독제연', method: '상부급기 상부배기', cmh: '10,000', openDampers: 'S-C2-10 / E-C2-40', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-58 / FEF-58', note: '⚠ 도면 파일명은 "D동 2층"으로 기재되어 있으나 Zone 번호(2L-113)와 원본 스케줄표는 C동으로 명시 — 파일명 오기로 판단되나 현장에서 동(棟) 재확인 권장.', planFiles: [{ label: 'D동 2층 우리은행 덕트평면도', path: '2층/D동 2층 제연덕트(우리은행).pdf' }, { label: 'D동 2층 우리은행 평면도', path: '2층/D동 2층 제연설비 평면도 (우리은행).pdf' }] },
+            { id: '2f-c3', floor: '2F', wing: 'C', name: '우리은행', zone: '2L-113', isIntegrated: false, isMutual: false, type: '단독제연', method: '상부급기 상부배기', cmh: '10,000', openDampers: 'S-C2-10 / E-C2-40', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-58 / FEF-58', note: '⚠ 도면 파일명은 "D동 2층"으로 기재되어 있으나 Zone 번호(2L-113)와 원본 스케줄표는 C동으로 명시 — 파일명 오기로 판단되나 현장에서 동(棟) 재확인 권장.', planFiles: [{ label: 'C동 2층 우리은행 덕트평면도', path: '2층/C동 2층 제연덕트(우리은행).pdf' }, { label: 'C동 2층 우리은행 평면도', path: '2층/C동 2층 제연설비 평면도 (우리은행).pdf' }] },
             
             // ---------------- 2F D동 ----------------
             { id: '2f-d1', floor: '2F', wing: 'D', name: '제이엘정형외과', zone: '2L-159 (통합)', isIntegrated: true, isMutual: false, type: '단독제연', method: '상부급기 상부배기', cmh: '46,500', openDampers: 'S-D2-04, 29 / E-D2-03~08', closeDampers: 'OPEN 외 댐퍼', fans: 'FSF-60, 61, 62 / FEF-60, 61, 62', note: '2F L-159~165 대통합 유지.', planFiles: [{ label: 'D동 2층 제이엘정형외과', path: '2층/D동 2층 제연설비 제이엘 정형외과.pdf.pdf' }] },
@@ -740,51 +743,128 @@
             }
         }
 
-        // 로컬 도면 PDF 연결 (이 HTML 파일 기준 상대경로). '1층/','2층/','지하1층/','지하2층/'로 시작하는 경로는
-        // "제연설비 수정" 폴더 하위 파일이며, 그 외(예: 임대차현황 평면도)는 최상위 폴더 파일임.
+        // ====================================================================
+        // 도면 PDF 위치 — 이 한 줄만 바꾸면 모든 도면 링크가 함께 바뀜
+        //  · ''                      : 이 사이트(저장소)에 PDF를 함께 올린 경우 (저장소 루트 기준 상대경로)
+        //  · 'https://k-safe.pro'    : 개인 호스팅에 올린 경우 (반드시 https — http는 브라우저가 차단)
+        // 폴더 구조: 제연설비 수정/1층·2층·지하1층/*.pdf, 임대차현황 평면도는 최상위
+        // ====================================================================
+        const DOC_BASE = '';
         const DOC_SUBFOLDERS = ['1층/', '2층/', '지하1층/', '지하2층/'];
         function resolvePlanUrl(path) {
-            const isUnderRevisedFolder = DOC_SUBFOLDERS.some(p => path.startsWith(p)) ||
-                path.startsWith('지하2층 거실제연설비 구역 평면도');
-            const full = isUnderRevisedFolder ? ('제연설비 수정/' + path) : path;
-            return full.split('/').map(encodeURIComponent).join('/');
+            if (/^https?:\/\//i.test(path)) return path.replace(/^http:\/\//i, 'https://');
+            const p = path.replace(/^제연설비 수정\//, '');
+            const full = (DOC_SUBFOLDERS.some(x => p.startsWith(x)) || p.startsWith('지하2층 거실제연설비 구역 평면도'))
+                ? ('제연설비 수정/' + p) : p;
+            const enc = full.split('/').map(encodeURIComponent).join('/');
+            return DOC_BASE ? DOC_BASE.replace(/\/+$/, '') + '/' + enc : enc;
+        }
+
+        // 도면 존재 확인 (HEAD 요청). 같은 사이트면 정확히 판정, 다른 도메인은 CORS로 확인 불가 → 'unknown'
+        async function checkDoc(url) {
+            try {
+                const r = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+                return r.ok ? 'ok' : (r.status === 404 ? 'missing' : 'error:' + r.status);
+            } catch (e) { return 'unknown'; }
+        }
+
+        // 매장별 전용 도면 — D:\\원그로브\\소방도면\\거실제연검토\\판매시설 제연설비(검토중) 폴더 (2026.11.01 파일목록 대조)
+        // 기존 planFiles 뒤에 덧붙임. 25MB 초과(한와담 26.04.03 45MB, 바토스앤폴리스 43.7MB, VIPS 인테리어 29.4MB)는 제외
+        const R = '판매시설 제연설비(검토중)/';
+        const STORE_DOCS = {
+            '2f-a1': [ { label: '하이라인 덕트제연', path: '2층/하이라인 피부과 덕트제연.pdf' },
+                       { label: '하이라인 완공도면', path: R + 'A동 2층 하이라인피부과(검토)/원그로브 완공도면 (하이라인피부과).pdf' },
+                       { label: '검토보고서', path: R + 'A동 2층 하이라인피부과(검토)/하이라인피부과_검토보고서.pdf' } ],
+            '2f-a3': [ { label: '한와담 소방 거실제연 도면', path: R + 'A동 2층 한와담(검토)/한와담 마곡 원그로브점_소방 거실제연.pdf' },
+                       { label: '검토보고서(09)', path: R + 'A동 2층 한와담(검토)/09_한와담_거실제연_검토보고서.pdf' },
+                       { label: '검토 결과보고서(08.11)', path: R + 'A동 2층 한와담(검토)/20260811_원그로브_A동2층_한와담_거실제연설비_검토_결과보고서.pdf' } ],
+            '2f-a5': [ { label: '페이홍러우 제연설계도면(251205)', path: R + 'A동 2층 페이홍러우(검토)/마곡 원그로브 페이홍러우_제연설계도면 251205.pdf' },
+                       { label: '검토보고서', path: R + 'A동 2층 페이홍러우(검토)/페이홍러우_검토보고서.pdf' } ],
+            '2f-b4': [ { label: 'VIPS 거실제연 변경후 도면', path: R + 'B동 2층 빕스(검토)/CJ VIPS 마곡 원그로브 거실제연 변경후 도면.pdf' },
+                       { label: 'VIPS 제연도면 변경전후', path: R + 'B동 2층 빕스(검토)/CJ VIPS 마곡 원그로브 제연도면 변경전후.pdf' },
+                       { label: '검토보고서', path: R + 'B동 2층 빕스(검토)/빕스_검토보고서.pdf' },
+                       { label: '검토 상황보고서(08.11)', path: R + 'B동 2층 빕스(검토)/20260811_원그로브_B동2층_VIPS_거실제연설비_검토_상황보고서.pdf' } ],
+            '2f-b5': [ { label: 'VIPS 거실제연 변경후 도면', path: R + 'B동 2층 빕스(검토)/CJ VIPS 마곡 원그로브 거실제연 변경후 도면.pdf' },
+                       { label: 'VIPS 제연도면 변경전후', path: R + 'B동 2층 빕스(검토)/CJ VIPS 마곡 원그로브 제연도면 변경전후.pdf' },
+                       { label: '검토보고서', path: R + 'B동 2층 빕스(검토)/빕스_검토보고서.pdf' } ],
+            '2f-c3': [ { label: '우리은행 이전 LAY-OUT(설비)', path: R + '우리은행/마곡역금융센터 이전LAY-OUT공사(설비).pdf' } ],
+            '2f-d1': [ { label: '제이엘 제연설비 도면', path: R + 'D동 2층 제이엘정형외과(검토)/05. 마곡 제이엘 정형외과 제연설비 도면.pdf' },
+                       { label: '검토보고서', path: R + 'D동 2층 제이엘정형외과(검토)/제이엘정형외과_검토보고서.pdf' } ],
+            '2f-d2': [ { label: '검토보고서', path: R + 'D동 2층 연세위시치과(검토)/연세위시치과_검토보고서.pdf' } ],
+            '1f-a8': [ { label: '공탕·숙성도 제연설비 준공도서', path: R + '숙성도/공탕,숙성도 원그로브점 제연설비 준공도서.pdf' } ],
+            '1f-a9': [ { label: '공탕·숙성도 제연설비 준공도서', path: R + '숙성도/공탕,숙성도 원그로브점 제연설비 준공도서.pdf' } ],
+            '1f-b1': [ { label: '중앙해장 거실제연 변경후 도면', path: R + 'B동 1층 중앙해장(검토)/원그로브_B동1층_중앙해장_거실제연 변경후 도면.pdf' },
+                       { label: '중앙해장 소방설비 도면', path: R + 'B동 1층 중앙해장(검토)/03 소방설비.pdf' },
+                       { label: '검토보고서', path: R + 'B동 1층 중앙해장(검토)/중앙해장_검토보고서.pdf' },
+                       { label: '검토 상황보고서(08.18)', path: R + 'B동 1층 중앙해장(검토)/20260818_원그로브_B동1층_중앙해장_거실제연설비_검토_상황보고서.pdf' } ],
+            '1f-b2': [ { label: '파리크라상 제연덕트 준공도면(날인)', path: R + 'B동 1층 파리크라상(검토)/SPC 파리크라상 마곡원그로브점_기계소방 제연덕트 준공도면_날인본.pdf' },
+                       { label: '제3차 제연설비 기술검토의견서', path: R + 'B동 1층 파리크라상(검토)/제3차 SPC 파리크라상 원그로브전 제연설비 기술검토의견서_합본.pdf' },
+                       { label: '검토보고서', path: R + 'B동 1층 파리크라상(검토)/파리크라상_검토보고서.pdf' } ],
+            '1f-c1': [ { label: '딤딤섬 거실제연 변경후 도면', path: R + 'C동 1층 딤딤섬(검토)/마곡 원그로브 딤딤섬 거실제연 변경후 도면.pdf' },
+                       { label: '딤딤섬 거실제연설비 도면', path: R + 'C동 1층 딤딤섬(검토)/마곡 원그로브 딤딤섬 거실제연설비 도면.pdf' },
+                       { label: '검토보고서', path: R + 'C동 1층 딤딤섬(검토)/딤딤섬_검토보고서.pdf' } ],
+            '1f-c2': [ { label: '매드포갈릭 제연덕트도면(기술사 확인)', path: R + 'C동 1층 매드포갈릭/매드포갈릭 마곡점 제연덕트도면_기술사 확인서.pdf' },
+                       { label: '검토보고서', path: R + 'C동 1층 매드포갈릭/매드포갈릭_검토보고서.pdf' } ],
+            '1f-c5': [ { label: '버핏 거실제연 변경도면', path: R + 'C동 1층 버핏그라운드(검토)/버핏그라운드 원그로브점 거실제연 변경도면.pdf' },
+                       { label: '버핏 소방설비(직인)', path: R + 'C동 1층 버핏그라운드(검토)/05.버핏그라운드 원그로브점 소방설비_직인표시 2025.08.pdf' },
+                       { label: '제연설비 검토의견서(250819)', path: R + 'C동 1층 버핏그라운드(검토)/버핏그라운드 원그로브점 제연설비 검토의견서 250819.pdf' },
+                       { label: '검토보고서', path: R + 'C동 1층 버핏그라운드(검토)/버핏그라운드_검토보고서.pdf' } ],
+            '1f-d1': [ { label: '테라로사 거실제연 변경후 도면', path: R + 'D동 1층 테라로사(검토)/테라로사_원그로브점_거실제연 변경후 도면.pdf' },
+                       { label: '테라로사 설비도면(기술사날인)', path: R + 'D동 1층 테라로사(검토)/테라로사_원그로브점_설비도면(기술사날인).pdf' },
+                       { label: '검토보고서', path: R + 'D동 1층 테라로사(검토)/테라로사_검토보고서.pdf' } ],
+            'b1-a3': [ { label: '무신사 하부급기 그릴 의견서', path: R + 'A동 지하1층 무신사 스탠다드/251017_MS_원그로브점_하부급기 그릴 의견서.pdf' },
+                       { label: '무신사 기계종합', path: R + 'A동 지하1층 무신사 스탠다드/260122_MS_원그로브점_기계종합.pdf' },
+                       { label: '검토보고서', path: R + 'A동 지하1층 무신사 스탠다드/무신사_검토보고서.pdf' } ],
+            'b1-a4': [ { label: '검토보고서', path: R + 'A동 지하1층 유니클로/유니클로_검토보고서.pdf' },
+                       { label: '검토 상황보고서(08.18)', path: R + 'A동 지하1층 유니클로/20260818_원그로브_A동지하1층_유니클로_거실제연설비_검토_상황보고서.pdf' } ],
+            'b1-c7': [ { label: '아트박스 준공도면', path: R + '아트박스/01 아트박스_원그로브몰_준공도면.pdf' } ],
+            'b1-d3': [ { label: 'JAJU 준공도면', path: R + 'JAJU/01.준공도면_JAJU_원그로브몰.pdf' } ],
+        };
+        const CHAMPION_DOCS = [
+            { label: '챔피언 거실제연 변경후 도면', path: R + 'D동 지하1층 챔피언더블랙벨트(검토)/원그로브몰 마곡점_챔피언 _거실제연 변경후 도면.pdf' },
+            { label: '챔피언 상상스케치 제연 변경후', path: R + 'D동 지하1층 챔피언더블랙벨트(검토)/원그로브몰 마곡점_챔피언 내 상상스케치_제연설비 변경후 도면.pdf' },
+            { label: '제연덕트(기술사직인)', path: R + 'D동 지하1층 챔피언더블랙벨트(검토)/원그로브 마곡점_제연덕트(기술사직인).pdf' },
+            { label: '검토보고서', path: R + 'D동 지하1층 챔피언더블랙벨트(검토)/챔피언더블랙벨트_검토보고서.pdf' } ];
+        STORE_DOCS['b1-d6'] = CHAMPION_DOCS; STORE_DOCS['b1-d8'] = CHAMPION_DOCS;
+        function withStoreDocs(store) {
+            const extra = STORE_DOCS[store.id];
+            if (!extra) return store;
+            const seen = new Set((store.planFiles || []).map(d => d.path));
+            return { ...store, planFiles: [...(store.planFiles || []), ...extra.filter(d => !seen.has(d.path))] };
         }
 
         // 층별 기본 도면 (구역평면도/덕트평면도 등 층 전체를 다루는 도면)
         const FLOOR_DOCS = {
             '2F': [
-                { label: '2F 구역 평면도', path: '제연설비 수정/2층/2층 제연설비 구역 평면도.pdf' },
-                { label: '2F 덕트 평면도', path: '제연설비 수정/2층/2층 제연설비 덕트  평면도.pdf' },
-                { label: '2F 죠닝도(변경후)', path: '제연설비 수정/2층/MF-202 지상2층 거실제연설비 죠닝도(변경후).pdf' },
-                { label: 'A·B동 2F 구역평면도', path: '제연설비 수정/2층/A동, B동 2층 제연설비 구역 평면도.pdf' },
+                { label: '2F 구역 평면도', path: '2층/2층 제연설비 구역 평면도.pdf' },
+                { label: '2F 덕트 평면도', path: '2층/2층 제연설비 덕트  평면도.pdf' },
+                { label: '2F 죠닝도(변경후)', path: '2층/MF-202 지상2층 거실제연설비 죠닝도(변경후).pdf' },
+                { label: 'A·B동 2F 구역평면도', path: '2층/A동, B동 2층 제연설비 구역 평면도.pdf' },
+                { label: '2F 구역도(변경반영 v5)', path: '지상2층_거실제연구역도_변경반영_v5.pdf' },
+                { label: '휀용량·메인댐퍼 정리(전체)', path: '거실제연휀 용량 및 메인댐퍼 정리.pdf' },
             ],
             '1F': [
                 { label: '1F 구역 평면도(전체)', path: '1층/1층 제연설비 구역 평면도.pdf' },
                 { label: '1F 덕트 일람표', path: '1층/1층 거실제연댐퍼 덕트 일람표.pdf' },
                 { label: '1F 휀용량·메인댐퍼 설명', path: '1층/ABCD동 1층 제연덕트  휀용량 및 메인댐퍼 설명.pdf' },
+                { label: 'B동 1F 확대평면도', path: 'B동 지상1층 거실제연설비 확대평면도..pdf' },
+                { label: 'C동 1F 확대평면도', path: 'C동 지상1층 거실제연설비 확대평면도..pdf' },
+                { label: 'D동 1F 확대평면도', path: 'D동 지상1층 거실제연설비 확대평면도..pdf' },
+                { label: '1F 구역도(변경반영 v5)', path: '지상1층_거실제연구역도_변경반영_v5.pdf' },
+                { label: '휀용량·메인댐퍼 정리(전체)', path: '거실제연휀 용량 및 메인댐퍼 정리.pdf' },
                 { label: '임대차현황 평면도(넘버링)', path: 'Retail 임대차현황 평면도(넘버링)_260522.pdf' },
             ],
             'B1F': [
                 { label: 'B1F 구역 평면도', path: '지하1층/지하 1층 제연설비 구역 평면도.pdf' },
                 { label: 'B1F 스케줄', path: '지하1층/지하 1층 제연설비 스케줄.pdf' },
+                { label: 'B1F 구역도(변경반영 v5)', path: '지하1층_거실제연구역도_변경반영_v5 (1).pdf' },
+                { label: '휀용량·메인댐퍼 정리(전체)', path: '거실제연휀 용량 및 메인댐퍼 정리.pdf' },
                 { label: '임대차현황 평면도(넘버링)', path: 'Retail 임대차현황 평면도(넘버링)_260522.pdf' },
             ],
             // B2F(지하2층 이마트 트레이더스)는 점검 대상 제외 — 도면 링크도 함께 제거함.
         };
 
-        // 야간 무풍 연동점검 일정 — 「무풍연동점검 실행계획서」(2026.10.08) 5절 세부일정 (동별 팬룸 단위 편성)
-        const DAY_LABELS = {
-            'Day1': 'Day1 · 10.19(월)~20(화)', 'Day2': 'Day2 · 10.20(화)~21(수)', 'Day3': 'Day3 · 10.21(수)~22(목)',
-            'Day4': 'Day4 · 10.22(목)~23(금)', 'Day5': 'Day5 · 10.23(금)~24(토) 예비'
-        };
-        // lockout: 실배정 휀이 도면과 다를 수 있으므로(한와담·빕스"2"·버핏·테라로사 등) 해당 동 팬룸의 휀을 전부 차단 후 발보
-        const DAY_INFO = {
-            'Day1': { stores: 'A동 2F 한와담 + B동 2F 빕스("13"·"2")', fanroom: '#1 (+#2 FSF-54)', lockout: '팬룸#1 FSF/FEF-51·52·53 전부 + 팬룸#2 FSF/FEF-54(빕스"2" 후보)', memo: '한와담 2L-10·11 동시개방 확인 · 착수 전 FSF/FEF-52·댐퍼 9점 복구상태 확인 · 빕스 발보 시 페이홍러우(2L-12) 공용댐퍼 동작 기록' },
-            'Day2': { stores: 'B동 1F 중앙해장 + C동 1F 딤딤섬', fanroom: '#2, #3', lockout: '팬룸#2 FSF/FEF-54·55·56 + 팬룸#3 FSF/FEF-57·58·59 전부', memo: '중앙해장 6구역 동시개방·구 FSF-54 미기동 · 딤딤섬 3구역 동시개방·FSF-57+58 동시기동' },
-            'Day3': { stores: 'C동 1F 버핏그라운드 + D동 1F 테라로사', fanroom: '#3, #5', lockout: '팬룸#3 FSF/FEF-57·58·59 + 팬룸#5 FSF/FEF-60·61·62 전부', memo: '버핏 구역별 실제 기동휀 확정(설계 45,000↔실배정 15,500 역전 의심) · 테라로사 실제 출력 휀(60+61 / 62) 기록' },
-            'Day4': { stores: 'D동 B1F 챔피언더블랙벨트 (단독배정)', fanroom: '#5', lockout: '팬룸#5 FSF/FEF-60·61·62 전부', memo: '최고난도 — ⑱·⑲ 개별 발보 · 무신사 키즈(FSF-61 공유) 오연동 없음 확인' },
-            'Day5': { stores: '예비일 — 미완료·재점검 구역 및 결과 정리', fanroom: '필요시', lockout: '재점검 대상 동 팬룸 휀 전부', memo: '기상·실화재 등 순연 대비 · 부적합 연세위시치과·매드포갈릭 편입 검토' },
-        };
+        // 계획 일차(Day1~5: 10.19~24) 정의 삭제 — 실제 무풍점검은 10.22~23 2일 실시로 의미 상실 (night 저장값은 보존)
         const LEGACY_DAY = { N1: 'Day1', N2: 'Day2', N3: 'Day3', N4: 'Day4', N5: 'Day5' };
         function getDay(store) {
             return store.night ? (LEGACY_DAY[store.night] || store.night) : '';
@@ -895,20 +975,20 @@
                     }
                     const merged = { ...store, status: '미점검', memo: '', review: store.review || '', note: store.note || '', ...ov };
                     merged.day = getDay(merged);
-                    return merged;
+                    if (finalOf(merged.id)) merged.isInspectionTarget = true; // 10.29 최종판정 대상은 저장값과 무관하게 점검대상으로 표시
+                    return withStoreDocs(merged);
                 })
                 .filter(store => !store.deleted);
         }
 
         function renderDayFilter() {
             const container = document.getElementById('day-filter');
-            const days = ['ALL', 'TARGET', 'Day1', 'Day2', 'Day3', 'Day4', 'Day5'];
+            const days = ['ALL', 'TARGET']; // 계획 일차(Day1~5) 필터 삭제 — 실제 10.22~23 2일 실시
             container.innerHTML = '';
             days.forEach(d => {
                 const btn = document.createElement('button');
                 btn.className = `day-btn px-3 py-2 rounded-md text-xs font-semibold transition-all whitespace-nowrap ${d === currentDayFilter ? 'active' : 'text-slate-300 hover:bg-slate-700'}`;
-                btn.textContent = d === 'ALL' ? '층별 전체' : d === 'TARGET' ? '★ 점검대상(전층)' : DAY_LABELS[d];
-                btn.title = DAY_INFO[d] ? DAY_INFO[d].stores : '';
+                btn.textContent = d === 'ALL' ? '층별 전체' : '★ 점검대상(전층)';
                 btn.onclick = () => { currentDayFilter = d; renderDayFilter(); renderMap(activeFloor()); };
                 container.appendChild(btn);
             });
@@ -916,18 +996,17 @@
 
         function renderDayInfo() {
             const box = document.getElementById('day-info');
-            const timeline = '<div class="mt-1.5 text-slate-500">22:30 집결·TBM → 23:00 설비전환(속보·방송 정지, 휀 MCCB OFF) → 23:15 연동점검 → 02:45 복구 → 03:30 최종확인 · <b class="text-red-600">03:30 이후 신규착수 금지, 04:00까지 전 설비 AUTO 복귀</b></div>';
-            if (currentDayFilter === 'TARGET') {
-                box.innerHTML = '<div class="font-bold text-slate-800 mb-1">야간 무풍 연동점검 일정 (23:00~익일 04:00)</div>' +
-                    Object.keys(DAY_INFO).map(d => `<div><b>${esc(DAY_LABELS[d])}</b> — ${esc(DAY_INFO[d].stores)} <span class="text-slate-400">(팬룸 ${esc(DAY_INFO[d].fanroom)})</span><br><span class="text-red-600">🔒 ${esc(DAY_INFO[d].lockout)}</span></div>`).join('') + timeline;
-                box.classList.remove('hidden');
-            } else if (DAY_INFO[currentDayFilter]) {
-                const i = DAY_INFO[currentDayFilter];
-                box.innerHTML = `<div class="font-bold text-slate-800">${esc(DAY_LABELS[currentDayFilter])} 23:00~04:00 · 팬룸/MCC ${esc(i.fanroom)}</div><div class="mt-0.5">${esc(i.stores)} — <span class="text-blue-700 font-semibold">${esc(i.memo)}</span></div><div class="mt-1 font-bold text-red-700">🔒 MCCB OFF·LOTO 대상: ${esc(i.lockout)} <span class="font-normal text-red-500">(실배정 미확정 휀이 있으므로 지정 휀만 차단 금지)</span></div>` + timeline;
-                box.classList.remove('hidden');
-            } else {
-                box.classList.add('hidden');
-            }
+            if (currentDayFilter !== 'TARGET') { box.classList.add('hidden'); return; }
+            const S = (window.REPORT_DATA && window.REPORT_DATA.stores) || [];
+            const order = ['부적합', '보완필요', '재시험', '조건부적합', '적합'];
+            const summary = order.map(g => {
+                const list = S.filter(x => x.grade === g);
+                return list.length ? `<span class="fg-badge fg-${g}">${esc(fgLabel(g))} ${list.length}</span> ${esc(list.map(x => x.name).join(', '))}` : '';
+            }).filter(Boolean).join('<span class="text-slate-300 mx-1.5">|</span>');
+            box.innerHTML = '<div class="font-bold text-slate-800 mb-1">야간 무풍 연동점검 실시 2026.10.22(목)~10.23(금) · 8개 매장 · 8명 · 최종판정 10.29 정리본</div>' +
+                `<div class="leading-relaxed">${summary}</div>` +
+                '<div class="mt-1.5 text-slate-500">후속: 11월 1주 SMD 로직 변경 → 2주 불량 수리·주소 정리 → 3~4주 무풍 재시험·TAB → 11월 말 최종 재보고 · <a href="report.html" class="text-sky-700 font-bold underline">결과보고서 보기 →</a></div>';
+            box.classList.remove('hidden');
         }
 
         function updateProgressSummary(list) {
@@ -1010,7 +1089,7 @@
                     </div>
                     <div class="flex items-center justify-between mt-1">
                         <div class="text-[10px] text-slate-500 font-mono bg-white bg-opacity-70 px-1.5 py-0.5 rounded inline-block self-start border border-slate-100">Zone: ${esc(store.zone)}</div>
-                        <div class="text-[10px] ${store.day ? 'text-red-600 font-bold' : 'text-slate-300'} whitespace-nowrap">${store.day ? esc(store.day) + (store.isInspectionTarget ? ` · ${getChecks(store).filter(Boolean).length}/${CHECK_ITEMS.length}` : '') : '-'}</div>
+                        <div class="text-[10px] ${store.isInspectionTarget ? 'text-red-600 font-bold' : 'text-slate-300'} whitespace-nowrap">${store.isInspectionTarget ? `점검 ${getChecks(store).filter(Boolean).length}/${CHECK_ITEMS.length}` : '-'}</div>
                     </div>
                 `;
                 container.appendChild(el);
@@ -1147,7 +1226,7 @@
             deleteBtn.classList.remove('animate-pulse');
 
             document.getElementById('detail-floor-badge').textContent = `${store.floor} ${store.wing}동`;
-            document.getElementById('detail-day').textContent = store.day ? ('야간 ' + (DAY_LABELS[store.day] || store.day)) : (store.isInspectionTarget ? '일차 미배정' : '무풍점검 대상 외');
+            document.getElementById('detail-day').textContent = store.isInspectionTarget ? '무풍점검 대상 (10.22~23 실시)' : '무풍점검 대상 외';
             renderFinalBox(store);
             const cpBox = document.getElementById('checkpoint-box');
             document.getElementById('checkpoint-text').textContent = store.checkPoint || '';
@@ -1210,6 +1289,9 @@
                     btn.onclick = () => openLocalDoc(doc.path, doc.label);
                     planContainer.appendChild(btn);
                 });
+                planWrap.classList.remove('hidden');
+            } else if (store.isInspectionTarget) {
+                planContainer.innerHTML = '<span class="text-xs text-red-600">⚠ 전용 도면 미등록 — 무풍점검 대상이므로 구역·덕트 확대평면도 연결 필요. 우선 하단 층별 도면을 참조하세요.</span>';
                 planWrap.classList.remove('hidden');
             } else {
                 planWrap.classList.add('hidden');
@@ -1392,11 +1474,11 @@
         // 결과 CSV (엑셀용) — 점검대상 매장의 도면값·현장실측·판정을 한 표로 (사후 결과보고서용)
         function exportCsv() {
             const rows = getStoreData().filter(s => s.isInspectionTarget)
-                .sort((a, b) => (a.day || 'Z').localeCompare(b.day || 'Z'));
-            const head = ['일차', '층', '동', '매장', 'Zone', '도면검토판정', '현장결과', '체크완료', '도면 기동휀', '현장 실측 기동휀', '현장 실측 댐퍼', '설계/법정 풍량', '현장메모', '점검자', '판정시각'];
+                .sort((a, b) => ({ '2F': 0, '1F': 1, 'B1F': 2 }[a.floor] ?? 9) - ({ '2F': 0, '1F': 1, 'B1F': 2 }[b.floor] ?? 9) || a.wing.localeCompare(b.wing));
+            const head = ['최종판정(10.29)', '층', '동', '매장', 'Zone', '도면검토판정', '현장결과', '체크완료', '도면 기동휀', '현장 실측 기동휀', '현장 실측 댐퍼', '설계/법정 풍량', '현장메모', '점검자', '판정시각'];
             const q = v => '"' + String(v ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' / ') + '"';
             const lines = [head.map(q).join(',')].concat(rows.map(s => [
-                s.day, s.floor, s.wing + '동', s.name, s.zone, s.review, s.status,
+                finalOf(s.id) ? fgLabel(finalOf(s.id).grade) : '', s.floor, s.wing + '동', s.name, s.zone, s.review, s.status,
                 `${getChecks(s).filter(Boolean).length}/${CHECK_ITEMS.length}`,
                 s.fans, s.fieldFans, s.fieldDampers, s.cmh, s.memo, s.inspector,
                 s.inspectedAt ? new Date(s.inspectedAt).toLocaleString('ko-KR') : ''
@@ -1450,14 +1532,63 @@
         }
 
         // 도면 팝업 모달 열기/닫기
-        function openDocModal(url, label) {
+        async function openDocModal(url, label) {
+            const frame = document.getElementById('doc-modal-frame');
+            const msg = document.getElementById('doc-modal-msg');
             document.getElementById('doc-modal-title').textContent = label || '도면 보기';
-            document.getElementById('doc-modal-frame').src = url;
+            document.getElementById('doc-modal-newtab').href = url;
+            document.getElementById('doc-modal-newtab').classList.remove('hidden');
+            msg.classList.add('hidden');
             document.getElementById('doc-modal').classList.remove('hidden');
+            const st = await checkDoc(url);
+            if (st === 'missing') {
+                frame.src = 'about:blank';
+                msg.innerHTML = `<p class="font-bold text-red-600 mb-2">도면 파일이 서버에 없습니다 (404)</p>
+                    <p class="mb-1">요청 경로: <code class="bg-slate-100 px-1 rounded break-all">${esc(decodeURIComponent(url))}</code></p>
+                    <p class="text-slate-500">PDF를 위 경로(폴더·파일명 그대로)로 올리거나, 대시보드 소스의 DOC_BASE / 도면 경로를 실제 위치로 고쳐야 합니다. 하단 「도면 링크 점검」으로 전체 누락 현황을 볼 수 있습니다.</p>`;
+                msg.classList.remove('hidden');
+            } else {
+                frame.src = url;
+            }
         }
         function closeDocModal() {
             document.getElementById('doc-modal').classList.add('hidden');
             document.getElementById('doc-modal-frame').src = 'about:blank';
+            document.getElementById('doc-modal-msg').classList.add('hidden');
+        }
+
+        // 도면 링크 일괄 점검 — 층별 도면 + 매장 전용 도면 전체를 HEAD 요청으로 확인
+        async function checkAllDocs() {
+            const map = new Map(); // url -> {path, label, users:Set}
+            const add = (doc, who) => {
+                const url = resolvePlanUrl(doc.path);
+                if (!map.has(url)) map.set(url, { path: doc.path, label: doc.label, users: new Set() });
+                map.get(url).users.add(who);
+            };
+            Object.keys(FLOOR_DOCS).forEach(f => FLOOR_DOCS[f].forEach(d => add(d, f + ' 층별도면')));
+            const stores = getStoreData();
+            stores.forEach(s => (s.planFiles || []).forEach(d => add(d, `${s.floor} ${s.wing}동 ${s.name}`)));
+            const msg = document.getElementById('doc-modal-msg');
+            document.getElementById('doc-modal-title').textContent = '도면 링크 점검';
+            document.getElementById('doc-modal-newtab').classList.add('hidden');
+            document.getElementById('doc-modal-frame').src = 'about:blank';
+            msg.innerHTML = '<p class="text-slate-500">점검 중...</p>';
+            msg.classList.remove('hidden');
+            document.getElementById('doc-modal').classList.remove('hidden');
+            const items = [...map.entries()];
+            const res = await Promise.all(items.map(([url]) => checkDoc(url)));
+            const tag = { ok: '<span class="text-green-600 font-bold">정상</span>', missing: '<span class="text-red-600 font-bold">파일 없음</span>', unknown: '<span class="text-amber-600 font-bold">확인불가(외부)</span>' };
+            const cnt = k => res.filter(r => r === k).length;
+            const targets = stores.filter(s => s.isInspectionTarget && !(s.planFiles || []).length);
+            const empty = stores.filter(s => !(s.planFiles || []).length).length;
+            msg.innerHTML = `
+                <p class="mb-2"><b>도면 ${items.length}종</b> — 정상 ${cnt('ok')} · <span class="text-red-600">파일 없음 ${cnt('missing')}</span> · 확인불가 ${cnt('unknown')} · 기타 ${items.length - cnt('ok') - cnt('missing') - cnt('unknown')}
+                <br><span class="text-slate-500">도면 위치(DOC_BASE): ${esc(DOC_BASE || '이 사이트 저장소')}</span></p>
+                <table class="w-full text-xs border-collapse mb-4"><thead><tr class="bg-slate-100"><th class="border p-1.5 text-left">상태</th><th class="border p-1.5 text-left">도면</th><th class="border p-1.5 text-left">경로</th><th class="border p-1.5 text-left">사용처</th></tr></thead><tbody>
+                ${items.map(([url, d], k) => `<tr class="${res[k] === 'missing' ? 'bg-red-50' : ''}"><td class="border p-1.5 whitespace-nowrap">${tag[res[k]] || esc(res[k])}</td><td class="border p-1.5">${esc(d.label)}</td><td class="border p-1.5 break-all font-mono text-[10px]">${esc(decodeURIComponent(url))}</td><td class="border p-1.5">${esc([...d.users].join(', '))}</td></tr>`).join('')}
+                </tbody></table>
+                <p class="font-bold mb-1">전용 도면 미등록 매장: ${empty}곳 (그중 무풍점검 대상 ${targets.length}곳)</p>
+                <p class="text-red-600">${esc(targets.map(s => `${s.floor} ${s.name}`).join(', ') || '없음')}</p>`;
         }
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') { closeDocModal(); closeLogin(); }
