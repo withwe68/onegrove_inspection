@@ -108,7 +108,7 @@
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
             <div>
                 <h1 class="text-xl font-bold tracking-tight">원그로브 거실제연 점검 대시보드</h1>
-                <p class="text-xs text-slate-400 mt-1">야간 무풍 연동점검 실시 2026.10.22(목)~10.23(금) · 8개 매장 · 8명 · 최종판정 2026.10.29 정리본 기준 (계획: 실행계획서 10.08 / Day 표기는 계획 일정)</p>
+                <p class="text-xs text-slate-400 mt-1">야간 무풍 연동점검 실시 2026.10.22(목)~10.23(금) · 8개 매장 · 8명 · 최종판정 2026.10.29 정리본 기준 · 11월 보완조치 후 재시험 예정</p>
             </div>
             <div class="flex gap-2 items-center">
                 <a href="report.html" class="px-3 py-2 bg-sky-700 hover:bg-sky-600 text-white text-xs font-bold rounded-lg shadow-sm whitespace-nowrap" title="무풍연동점검 결과보고서 (읽기 전용·인쇄)">📄 결과보고서</a>
@@ -253,14 +253,14 @@
                         <input id="edit-name" type="text" class="w-full text-xl font-extrabold text-slate-900 border-b-2 border-slate-200 focus:border-blue-500 outline-none pb-1" placeholder="매장명 입력...">
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 gap-3">
                         <div>
                             <p class="text-[11px] text-slate-500 font-medium mb-1">도면검토 판정 (검토보고서 확정값)</p>
                             <select id="edit-review" class="w-full text-xs font-bold border border-slate-300 rounded px-2 py-1.5 bg-white">
                                 <option value="">미검토</option><option>적합</option><option>적합(여유율 주의)</option><option>적합→재검토</option><option>부적합</option><option>검토요망</option><option>점검요망</option>
                             </select>
                         </div>
-                        <div>
+                        <div class="hidden"><!-- 계획 일차 선택: 실제 실시(10.22~23)로 의미 상실, 화면에서 제거(기존 저장값 보존용으로만 유지) -->
                             <p class="text-[11px] text-slate-500 font-medium mb-1">야간점검 일차</p>
                             <select id="edit-night" class="w-full text-xs font-bold border border-slate-300 rounded px-2 py-1.5 bg-white">
                                 <option value="">미배정</option><option value="Day1">Day1 · 10.19(월)</option><option value="Day2">Day2 · 10.20(화)</option><option value="Day3">Day3 · 10.21(수)</option><option value="Day4">Day4 · 10.22(목)</option><option value="Day5">Day5 · 10.23(금) 예비</option>
@@ -772,19 +772,7 @@
             // B2F(지하2층 이마트 트레이더스)는 점검 대상 제외 — 도면 링크도 함께 제거함.
         };
 
-        // 야간 무풍 연동점검 일정 — 「무풍연동점검 실행계획서」(2026.10.08) 5절 세부일정 (동별 팬룸 단위 편성)
-        const DAY_LABELS = {
-            'Day1': 'Day1 · 10.19(월)~20(화)', 'Day2': 'Day2 · 10.20(화)~21(수)', 'Day3': 'Day3 · 10.21(수)~22(목)',
-            'Day4': 'Day4 · 10.22(목)~23(금)', 'Day5': 'Day5 · 10.23(금)~24(토) 예비'
-        };
-        // lockout: 실배정 휀이 도면과 다를 수 있으므로(한와담·빕스"2"·버핏·테라로사 등) 해당 동 팬룸의 휀을 전부 차단 후 발보
-        const DAY_INFO = {
-            'Day1': { stores: 'A동 2F 한와담 + B동 2F 빕스("13"·"2")', fanroom: '#1 (+#2 FSF-54)', lockout: '팬룸#1 FSF/FEF-51·52·53 전부 + 팬룸#2 FSF/FEF-54(빕스"2" 후보)', memo: '한와담 2L-10·11 동시개방 확인 · 착수 전 FSF/FEF-52·댐퍼 9점 복구상태 확인 · 빕스 발보 시 페이홍러우(2L-12) 공용댐퍼 동작 기록' },
-            'Day2': { stores: 'B동 1F 중앙해장 + C동 1F 딤딤섬', fanroom: '#2, #3', lockout: '팬룸#2 FSF/FEF-54·55·56 + 팬룸#3 FSF/FEF-57·58·59 전부', memo: '중앙해장 6구역 동시개방·구 FSF-54 미기동 · 딤딤섬 3구역 동시개방·FSF-57+58 동시기동' },
-            'Day3': { stores: 'C동 1F 버핏그라운드 + D동 1F 테라로사', fanroom: '#3, #5', lockout: '팬룸#3 FSF/FEF-57·58·59 + 팬룸#5 FSF/FEF-60·61·62 전부', memo: '버핏 구역별 실제 기동휀 확정(설계 45,000↔실배정 15,500 역전 의심) · 테라로사 실제 출력 휀(60+61 / 62) 기록' },
-            'Day4': { stores: 'D동 B1F 챔피언더블랙벨트 (단독배정)', fanroom: '#5', lockout: '팬룸#5 FSF/FEF-60·61·62 전부', memo: '최고난도 — ⑱·⑲ 개별 발보 · 무신사 키즈(FSF-61 공유) 오연동 없음 확인' },
-            'Day5': { stores: '예비일 — 미완료·재점검 구역 및 결과 정리', fanroom: '필요시', lockout: '재점검 대상 동 팬룸 휀 전부', memo: '기상·실화재 등 순연 대비 · 부적합 연세위시치과·매드포갈릭 편입 검토' },
-        };
+        // 계획 일차(Day1~5: 10.19~24) 정의 삭제 — 실제 무풍점검은 10.22~23 2일 실시로 의미 상실 (night 저장값은 보존)
         const LEGACY_DAY = { N1: 'Day1', N2: 'Day2', N3: 'Day3', N4: 'Day4', N5: 'Day5' };
         function getDay(store) {
             return store.night ? (LEGACY_DAY[store.night] || store.night) : '';
@@ -895,6 +883,7 @@
                     }
                     const merged = { ...store, status: '미점검', memo: '', review: store.review || '', note: store.note || '', ...ov };
                     merged.day = getDay(merged);
+                    if (finalOf(merged.id)) merged.isInspectionTarget = true; // 10.29 최종판정 대상은 저장값과 무관하게 점검대상으로 표시
                     return merged;
                 })
                 .filter(store => !store.deleted);
@@ -902,13 +891,12 @@
 
         function renderDayFilter() {
             const container = document.getElementById('day-filter');
-            const days = ['ALL', 'TARGET', 'Day1', 'Day2', 'Day3', 'Day4', 'Day5'];
+            const days = ['ALL', 'TARGET']; // 계획 일차(Day1~5) 필터 삭제 — 실제 10.22~23 2일 실시
             container.innerHTML = '';
             days.forEach(d => {
                 const btn = document.createElement('button');
                 btn.className = `day-btn px-3 py-2 rounded-md text-xs font-semibold transition-all whitespace-nowrap ${d === currentDayFilter ? 'active' : 'text-slate-300 hover:bg-slate-700'}`;
-                btn.textContent = d === 'ALL' ? '층별 전체' : d === 'TARGET' ? '★ 점검대상(전층)' : DAY_LABELS[d];
-                btn.title = DAY_INFO[d] ? DAY_INFO[d].stores : '';
+                btn.textContent = d === 'ALL' ? '층별 전체' : '★ 점검대상(전층)';
                 btn.onclick = () => { currentDayFilter = d; renderDayFilter(); renderMap(activeFloor()); };
                 container.appendChild(btn);
             });
@@ -916,18 +904,17 @@
 
         function renderDayInfo() {
             const box = document.getElementById('day-info');
-            const timeline = '<div class="mt-1.5 text-slate-500">22:30 집결·TBM → 23:00 설비전환(속보·방송 정지, 휀 MCCB OFF) → 23:15 연동점검 → 02:45 복구 → 03:30 최종확인 · <b class="text-red-600">03:30 이후 신규착수 금지, 04:00까지 전 설비 AUTO 복귀</b></div>';
-            if (currentDayFilter === 'TARGET') {
-                box.innerHTML = '<div class="font-bold text-slate-800 mb-1">야간 무풍 연동점검 일정 (23:00~익일 04:00)</div>' +
-                    Object.keys(DAY_INFO).map(d => `<div><b>${esc(DAY_LABELS[d])}</b> — ${esc(DAY_INFO[d].stores)} <span class="text-slate-400">(팬룸 ${esc(DAY_INFO[d].fanroom)})</span><br><span class="text-red-600">🔒 ${esc(DAY_INFO[d].lockout)}</span></div>`).join('') + timeline;
-                box.classList.remove('hidden');
-            } else if (DAY_INFO[currentDayFilter]) {
-                const i = DAY_INFO[currentDayFilter];
-                box.innerHTML = `<div class="font-bold text-slate-800">${esc(DAY_LABELS[currentDayFilter])} 23:00~04:00 · 팬룸/MCC ${esc(i.fanroom)}</div><div class="mt-0.5">${esc(i.stores)} — <span class="text-blue-700 font-semibold">${esc(i.memo)}</span></div><div class="mt-1 font-bold text-red-700">🔒 MCCB OFF·LOTO 대상: ${esc(i.lockout)} <span class="font-normal text-red-500">(실배정 미확정 휀이 있으므로 지정 휀만 차단 금지)</span></div>` + timeline;
-                box.classList.remove('hidden');
-            } else {
-                box.classList.add('hidden');
-            }
+            if (currentDayFilter !== 'TARGET') { box.classList.add('hidden'); return; }
+            const S = (window.REPORT_DATA && window.REPORT_DATA.stores) || [];
+            const order = ['부적합', '보완필요', '재시험', '조건부적합', '적합'];
+            const summary = order.map(g => {
+                const list = S.filter(x => x.grade === g);
+                return list.length ? `<span class="fg-badge fg-${g}">${esc(fgLabel(g))} ${list.length}</span> ${esc(list.map(x => x.name).join(', '))}` : '';
+            }).filter(Boolean).join('<span class="text-slate-300 mx-1.5">|</span>');
+            box.innerHTML = '<div class="font-bold text-slate-800 mb-1">야간 무풍 연동점검 실시 2026.10.22(목)~10.23(금) · 8개 매장 · 8명 · 최종판정 10.29 정리본</div>' +
+                `<div class="leading-relaxed">${summary}</div>` +
+                '<div class="mt-1.5 text-slate-500">후속: 11월 1주 SMD 로직 변경 → 2주 불량 수리·주소 정리 → 3~4주 무풍 재시험·TAB → 11월 말 최종 재보고 · <a href="report.html" class="text-sky-700 font-bold underline">결과보고서 보기 →</a></div>';
+            box.classList.remove('hidden');
         }
 
         function updateProgressSummary(list) {
@@ -1010,7 +997,7 @@
                     </div>
                     <div class="flex items-center justify-between mt-1">
                         <div class="text-[10px] text-slate-500 font-mono bg-white bg-opacity-70 px-1.5 py-0.5 rounded inline-block self-start border border-slate-100">Zone: ${esc(store.zone)}</div>
-                        <div class="text-[10px] ${store.day ? 'text-red-600 font-bold' : 'text-slate-300'} whitespace-nowrap">${store.day ? esc(store.day) + (store.isInspectionTarget ? ` · ${getChecks(store).filter(Boolean).length}/${CHECK_ITEMS.length}` : '') : '-'}</div>
+                        <div class="text-[10px] ${store.isInspectionTarget ? 'text-red-600 font-bold' : 'text-slate-300'} whitespace-nowrap">${store.isInspectionTarget ? `점검 ${getChecks(store).filter(Boolean).length}/${CHECK_ITEMS.length}` : '-'}</div>
                     </div>
                 `;
                 container.appendChild(el);
@@ -1147,7 +1134,7 @@
             deleteBtn.classList.remove('animate-pulse');
 
             document.getElementById('detail-floor-badge').textContent = `${store.floor} ${store.wing}동`;
-            document.getElementById('detail-day').textContent = store.day ? ('야간 ' + (DAY_LABELS[store.day] || store.day)) : (store.isInspectionTarget ? '일차 미배정' : '무풍점검 대상 외');
+            document.getElementById('detail-day').textContent = store.isInspectionTarget ? '무풍점검 대상 (10.22~23 실시)' : '무풍점검 대상 외';
             renderFinalBox(store);
             const cpBox = document.getElementById('checkpoint-box');
             document.getElementById('checkpoint-text').textContent = store.checkPoint || '';
@@ -1392,11 +1379,11 @@
         // 결과 CSV (엑셀용) — 점검대상 매장의 도면값·현장실측·판정을 한 표로 (사후 결과보고서용)
         function exportCsv() {
             const rows = getStoreData().filter(s => s.isInspectionTarget)
-                .sort((a, b) => (a.day || 'Z').localeCompare(b.day || 'Z'));
-            const head = ['일차', '층', '동', '매장', 'Zone', '도면검토판정', '현장결과', '체크완료', '도면 기동휀', '현장 실측 기동휀', '현장 실측 댐퍼', '설계/법정 풍량', '현장메모', '점검자', '판정시각'];
+                .sort((a, b) => ({ '2F': 0, '1F': 1, 'B1F': 2 }[a.floor] ?? 9) - ({ '2F': 0, '1F': 1, 'B1F': 2 }[b.floor] ?? 9) || a.wing.localeCompare(b.wing));
+            const head = ['최종판정(10.29)', '층', '동', '매장', 'Zone', '도면검토판정', '현장결과', '체크완료', '도면 기동휀', '현장 실측 기동휀', '현장 실측 댐퍼', '설계/법정 풍량', '현장메모', '점검자', '판정시각'];
             const q = v => '"' + String(v ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' / ') + '"';
             const lines = [head.map(q).join(',')].concat(rows.map(s => [
-                s.day, s.floor, s.wing + '동', s.name, s.zone, s.review, s.status,
+                finalOf(s.id) ? fgLabel(finalOf(s.id).grade) : '', s.floor, s.wing + '동', s.name, s.zone, s.review, s.status,
                 `${getChecks(s).filter(Boolean).length}/${CHECK_ITEMS.length}`,
                 s.fans, s.fieldFans, s.fieldDampers, s.cmh, s.memo, s.inspector,
                 s.inspectedAt ? new Date(s.inspectedAt).toLocaleString('ko-KR') : ''
