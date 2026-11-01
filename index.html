@@ -9,6 +9,8 @@
     <!-- 실시간 공유 저장을 위한 Firebase SDK (아래 firebaseConfig를 설정하기 전까지는 자동으로 "이 기기 전용 저장 모드"로 동작합니다) -->
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+    <!-- 무풍연동점검 최종판정 공통 데이터 (report.html과 공유하는 단일 원본) -->
+    <script src="report-data.js"></script>
     
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
@@ -57,6 +59,10 @@
         body:not(.is-admin) .admin-only { display: none !important; }
         #detail-content :disabled { opacity: 1; cursor: default; }
         .status-btn:disabled { cursor: not-allowed; }
+        .fg-badge { font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+        .fg-적합 { background:#dcfce7; color:#15803d; } .fg-조건부적합 { background:#cffafe; color:#0e7490; }
+        .fg-보완필요 { background:#fef3c7; color:#b45309; } .fg-재시험 { background:#ede9fe; color:#6d28d9; }
+        .fg-부적합 { background:#fee2e2; color:#b91c1c; }
         .rv-badge { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 9999px; border: 1px solid; white-space: nowrap; }
         .rv-적합 { color: #15803d; background: #f0fdf4; border-color: #86efac; }
         .rv-부적합 { color: #b91c1c; background: #fef2f2; border-color: #fca5a5; }
@@ -102,9 +108,10 @@
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
             <div>
                 <h1 class="text-xl font-bold tracking-tight">원그로브 거실제연 점검 대시보드</h1>
-                <p class="text-xs text-slate-400 mt-1">야간 무풍 연동점검 2026.10.19(월)~10.24(토) 23:00~04:00 · 4일 점검 + 1일 예비 · 7개 매장 · 실행계획서(2026.10.08) 기준 · 10.16 점검준비 보완(휀 LOTO·매핑검증·현장실측 기록)</p>
+                <p class="text-xs text-slate-400 mt-1">야간 무풍 연동점검 실시 2026.10.22(목)~10.23(금) · 8개 매장 · 8명 · 최종판정 2026.10.29 정리본 기준 (계획: 실행계획서 10.08 / Day 표기는 계획 일정)</p>
             </div>
             <div class="flex gap-2 items-center">
+                <a href="report.html" class="px-3 py-2 bg-sky-700 hover:bg-sky-600 text-white text-xs font-bold rounded-lg shadow-sm whitespace-nowrap" title="무풍연동점검 결과보고서 (읽기 전용·인쇄)">📄 결과보고서</a>
                 <button onclick="toggleAdmin()" id="btn-admin" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-lg shadow-sm whitespace-nowrap">🔒 관리자 로그인</button>
                 <span id="sync-status" class="text-xs px-2 py-1 rounded font-bold bg-slate-700 text-slate-300 whitespace-nowrap">확인 중...</span>
                 <span id="progress-summary" class="text-xs bg-slate-800 px-3 py-2 rounded-lg font-mono border border-slate-700 whitespace-nowrap"></span>
@@ -146,7 +153,7 @@
                         <span class="flex items-center"><div class="w-2.5 h-2.5 bg-red-500 rounded-full mr-1.5"></div>부적합</span>
                         <span class="flex items-center"><div class="w-2.5 h-2.5 bg-amber-500 rounded-full mr-1.5"></div>보류</span>
                         <span class="w-px h-4 bg-slate-200"></span>
-                        <span class="flex items-center gap-1"><span class="rv-badge rv-부적합">도면</span>= 도면검토 판정 · ● = 현장 무풍점검 결과</span>
+                        <span class="flex items-center gap-1"><span class="rv-badge rv-부적합">도면</span>= 도면검토 판정 · ● = 현장 무풍점검 결과 · <span class="fg-badge fg-부적합">최종</span>= 10.29 최종판정</span>
                     </div>
 
                     <!-- 맵 그리드 -->
@@ -216,6 +223,7 @@
                 <div id="detail-content" class="flex-1 overflow-y-auto p-4 md:p-5 hidden flex-col gap-4">
                     <div id="viewonly-banner" class="text-[11px] bg-slate-100 border border-slate-300 text-slate-600 rounded-md px-3 py-2">👁 열람 전용 모드 — 수정하려면 상단 <b>🔒 관리자 로그인</b>을 누르세요.</div>
                     <div id="remote-notice" class="hidden text-[11px] bg-amber-50 border border-amber-300 text-amber-800 rounded-md px-3 py-2">⚠ 다른 사용자가 이 매장 데이터를 변경했습니다. 입력 중인 내용은 유지되며, 저장하면 내 입력값으로 덮어씁니다. <button onclick="reloadDetail()" class="underline font-bold">최신값 불러오기</button></div>
+                    <div id="final-box" class="hidden text-xs bg-white border-2 rounded-md px-3 py-2"></div>
                     <div id="checkpoint-box" class="hidden text-xs bg-red-50 border border-red-300 text-red-800 rounded-md px-3 py-2"><b>★ 현장 확인 핵심 (실행계획서)</b><div id="checkpoint-text" class="mt-1 leading-relaxed"></div></div>
                     <div id="fanmap-box" class="hidden text-xs bg-slate-50 border border-slate-300 rounded-md px-3 py-2">
                         <b class="text-slate-800">휀 ↔ 메인댐퍼 매핑 검증 (현장검증 2026.08.19 기준)</b>
@@ -996,6 +1004,7 @@
                         <div class="flex items-center min-w-0">${selectMark}<div class="${nameClass}" title="${esc(store.name)}">${crossFloor ? `<span class="text-[10px] text-slate-500 font-mono mr-1">${esc(store.floor)}</span>` : ''}${esc(store.name)}</div></div>
                         <div class="flex items-center gap-1 shrink-0">
                             ${store.review ? `<span class="rv-badge ${rvClass(store.review)}" title="도면검토 판정">${esc(store.review)}</span>` : ''}
+                            ${finalOf(store.id) ? `<span class="fg-badge fg-${esc(finalOf(store.id).grade)}" title="무풍점검 최종판정 (10.29)">${esc(fgLabel(finalOf(store.id).grade))}</span>` : ''}
                             <span class="status-dot st-${esc(store.status)}" title="현장결과: ${esc(store.status)}"></span>
                         </div>
                     </div>
@@ -1090,6 +1099,34 @@
             toggleSelectionMode(); // 선택모드 종료 + 재렌더링
         }
 
+        // ---------------- 무풍점검 최종판정 (report-data.js 연동, 읽기 전용) ----------------
+        // 판정 원본은 report-data.js 하나. 여기서 수정하지 않으며 Firestore에도 저장하지 않음.
+        function finalOf(id) {
+            const list = (window.REPORT_DATA && window.REPORT_DATA.stores) || [];
+            return list.find(s => (s.ids || []).includes(id)) || null;
+        }
+        function fgLabel(g) { return g === '조건부적합' ? '적합(조건부)' : g; }
+        function renderFinalBox(store) {
+            const box = document.getElementById('final-box');
+            const f = finalOf(store.id);
+            if (!f) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+            const border = { '적합':'#16a34a','조건부적합':'#0891b2','보완필요':'#d97706','재시험':'#7c3aed','부적합':'#dc2626' }[f.grade] || '#64748b';
+            const rate = f.rateMax ? `${f.rate}~${f.rateMax}%` : `${Number(f.rate).toFixed(1)}%`;
+            const cmh = f.ratedCmh ? `${f.ratedCmh.toLocaleString()} / 법정 ${f.legalCmh.toLocaleString()} CMH` : 'Zone별';
+            const basis = (window.REPORT_DATA.meta && window.REPORT_DATA.meta.basisDate) || '';
+            box.style.borderColor = border;
+            box.innerHTML = `
+                <div class="flex items-center justify-between gap-2 mb-1">
+                    <b class="text-slate-800">무풍점검 최종판정 <span class="font-normal text-slate-500">(${esc(basis)} 정리본)</span></b>
+                    <span class="fg-badge fg-${esc(f.grade)}" style="font-size:12px">${esc(fgLabel(f.grade))}</span>
+                </div>
+                <div class="text-slate-600">도면검토 ${esc(f.review)} → 현장 <b>${esc(fgLabel(f.grade))}</b> · ${esc(f.fan)} · ${esc(cmh)} · 충족률 <b>${esc(rate)}</b></div>
+                <div class="mt-1 text-slate-700"><b>사유</b> ${esc(f.reason)}</div>
+                <div class="mt-0.5 text-slate-700"><b>조치</b> ${esc(f.action)}</div>
+                <a href="report.html" class="inline-block mt-1.5 text-sky-700 font-bold underline">결과보고서 보기 →</a>`;
+            box.classList.remove('hidden');
+        }
+
         // 상세 정보 표시 및 수정 모드 진입
         function showDetail(storeId, element, fromRefresh = false) {
             currentStoreId = storeId;
@@ -1111,6 +1148,7 @@
 
             document.getElementById('detail-floor-badge').textContent = `${store.floor} ${store.wing}동`;
             document.getElementById('detail-day').textContent = store.day ? ('야간 ' + (DAY_LABELS[store.day] || store.day)) : (store.isInspectionTarget ? '일차 미배정' : '무풍점검 대상 외');
+            renderFinalBox(store);
             const cpBox = document.getElementById('checkpoint-box');
             document.getElementById('checkpoint-text').textContent = store.checkPoint || '';
             cpBox.classList.toggle('hidden', !store.checkPoint);
